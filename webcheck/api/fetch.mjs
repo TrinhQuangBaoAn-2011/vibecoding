@@ -12,6 +12,11 @@
  *   GET /api/fetch?url=<encoded>
  *   → 200 { html, statusCode, finalUrl, elapsedMs }
  *   → lỗi { error: "...tiếng Việt...", detail: "...giải thích thêm..." }
+ *
+ * Chế độ phụ ?soft=1 (dùng riêng cho robots.txt / sitemap.xml):
+ *   - lỗi HTTP của trang gốc (404…) → coi như kết quả: 200 { statusCode: 404, html: '' }
+ *   - không lọc content-type (robots.txt là text/plain, sitemap là XML)
+ *   các luồng phân tích trang chính không dùng flag này — hành vi giữ nguyên.
  * KHÔNG sửa file này ở các mốc sau (độc quyền của mốc 1).
  */
 
@@ -48,7 +53,9 @@ export default async function handler(req, res) {
     return fail(res, 405, 'Chỉ nhận yêu cầu GET.');
   }
 
-  const raw = new URL(req.url, 'http://internal').searchParams.get('url');
+  const params = new URL(req.url, 'http://internal');
+  const raw = params.searchParams.get('url');
+  const isSoft = params.searchParams.get('soft') === '1'; // chế độ phụ cho robots.txt/sitemap.xml
   if (!raw) {
     return fail(res, 400, 'Thiếu địa chỉ trang cần kiểm tra.',
       'Dùng đúng dạng: GET /api/fetch?url=https%3A%2F%2Ften-mien.vn');
@@ -76,11 +83,20 @@ export default async function handler(req, res) {
     });
 
     if (!r.ok) {
+      if (isSoft) {
+        // Với robots/sitemap, lỗi HTTP của trang gốc là DỮ LIỆU (404 = chưa có tệp).
+        return send(res, 200, {
+          html: '',
+          statusCode: r.status,
+          finalUrl: r.url,
+          elapsedMs: Date.now() - started,
+        });
+      }
       return fail(res, 502, `Trang trả về lỗi HTTP ${r.status}.`, statusHint(r.status));
     }
 
     const contentType = r.headers.get('content-type') || '';
-    if (!/text\/html|application\/xhtml/i.test(contentType)) {
+    if (!isSoft && !/text\/html|application\/xhtml/i.test(contentType)) {
       return fail(res, 415, 'Địa chỉ này không trả về một trang web HTML.',
         `Nội dung nhận được là: ${contentType || 'không rõ loại'}.`);
     }

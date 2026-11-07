@@ -8,7 +8,7 @@
 (function () {
   const API_PATH = '/api/fetch?url=';
   const RESULT_KEY = 'webcheck:result';
-  const TIMEOUT_NOTICE = 'có thể mất đến 8 giây';
+  const TIMEOUT_NOTICE = 'có thể mất khoảng 8–15 giây'; // trang + robots/sitemap chạy xong mới nhảy trang
 
   const form = document.getElementById('f-check');
   const input = document.getElementById('url');
@@ -107,11 +107,36 @@
         throw Object.assign(new Error('api'), { handled: apiError(data, res.status) });
       }
 
+      // SITE-LEVEL: lấy robots.txt + sitemap.xml qua cùng proxy (chế độ ?soft=1:
+      // lỗi 404 của trang gốc trả về 200 kèm statusCode → client phân biệt
+      // "chưa có tệp" với "mạng lỗi" một cách rõ ràng).
+      let robots = null;
+      let sitemap = null;
+      try {
+        const originBase = new URL(data.finalUrl || normalized.value).origin;
+        const softFetch = (path) =>
+          fetch(API_PATH + encodeURIComponent(originBase + path) + '&soft=1', {
+            headers: { Accept: 'application/json' },
+          })
+            .then((r) => r.json())
+            .then((d) => (d && !d.error ? { statusCode: d.statusCode, text: d.html || '' } : null))
+            .catch(() => null);
+        [robots, sitemap] = await Promise.all([
+          softFetch('/robots.txt'),
+          softFetch('/sitemap.xml'),
+        ]);
+      } catch {
+        robots = null;
+        sitemap = null;
+      }
+
       const result = WebCheck.runChecks(data.html, {
         inputUrl: normalized.value,
         finalUrl: data.finalUrl || normalized.value,
         statusCode: data.statusCode,
         elapsedMs: data.elapsedMs,
+        robots,
+        sitemap,
       });
       sessionStorage.setItem(RESULT_KEY, JSON.stringify(result));
       window.location.assign('results.html');

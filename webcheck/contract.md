@@ -20,11 +20,11 @@ Lưu ý: sessionStorage sống theo tab/phien — đóng tab là mất (đúng �
 **Muốn có Result ngay không cần mạng?** Mở `results.html?demo=1` — một Result hoàn chỉnh cho
 one quán cà phê Đà Lạt mẫu (có cả warn/fail đủ điều) sẽ dựng sẵn trên trang.
 
-## 2. Shape Result v1.1
+## 2. Shape Result v1.2
 
 ```js
 {
-  version: '1.1',
+  version: '1.2',
   url: 'quan-moc-da-lat.vn',           // người dùng nhập
   finalUrl: 'https://quan-moc-da-lat.vn/', // sau redirects
   statusCode: 200,
@@ -33,7 +33,7 @@ one quán cà phê Đà Lạt mẫu (có cả warn/fail đủ điều) sẽ dự
   title: 'Quán cà phê Mộc — Đà Lạt',   // chuỗi title (nếu có) — tiện cho nhận xét
   checks: [
     {
-      id: 'title',                       // 1 trong 19 id ở mục 3
+      id: 'title',                       // 1 trong 22 id ở mục 3
       label: 'Tiêu đề trang (<title>)',  // tiếng Việt, sẵn để hiển thị
       group: 'SEO & hiển thị',
       weight: 10,                        // GỢI Ý; mốc 2 được tự định lại trọng số
@@ -42,7 +42,7 @@ one quán cà phê Đà Lạt mẫu (có cả warn/fail đủ điều) sẽ dự
       detail: 'Thẻ <title> chỉ 24 ký tự — ngắn hơn khuyến nghị (30–60).',
       suggestion: 'Viết lại tiêu đề 30–60 ký tự: nêu mặt hàng chính…',
     }
-    // … 19 mục
+    // … 22 mục
   ],
 }
 ```
@@ -51,35 +51,40 @@ Nghĩa của từng mức (mốc 3 (AI) nên phản chiếu đúng sắc thái n
 - `pass` — đạt chuẩn.
 - `warn` — **có nhưng chưa chuẩn** (ví dụ title 24 ký tự). Đây là sự tinh tế quan trọng: coi như đạt một phần khi tính điểm, nhắc riêng khi nhận xét.
 - `fail` — thiếu hoặc sai rõ ràng.
-- `unknown` — không xác định được (trang trả lỗi). Mốc 2 cân nhắc: xử lý như 0 đi phí hoặc loại khỏi tổng.
+- `unknown` — không xác định được (trang trả lỗi). Với `robots_txt`/`sitemap`, unknown = không fetch được
+  tệp (lỗi mạng / site chặn), không phải lỗi cấu hình của website. Mốc 2 cân nhắc: xử lý như 0
+  điểm hoặc loại khỏi tổng.
 
-## 3. 19 hạng mục
+## 3. 22 hạng mục
 
-**SEO & hiển thị**
+**SEO & hiển thị** (37)
 | id | Mục | Weight |
 |---|---|---|
-| title | Tiêu đề trang (`<title>`) | 10 |
-| meta_description | Mô tả tìm kiếm (meta description) | 10 |
-| open_graph | Chia sẻ mạng xã hội (Open Graph) | 4 |
+| title | Tiêu đề trang (`<title>`) | 8 |
+| meta_description | Mô tả tìm kiếm (meta description) | 8 |
+| open_graph | Chia sẻ mạng xã hội (Open Graph) | 3 |
 | canonical | Địa chỉ chuẩn (canonical) | 4 |
 | robots_meta | Chỉ dẫn công cụ tìm kiếm (robots) | 4 |
+| robots_txt | Tệp robots.txt (chỉ dẫn quét toàn site) | 3 |
+| sitemap | Sơ đồ trang (sitemap.xml) | 3 |
 | structured_data | Dữ liệu có cấu trúc (JSON-LD) | 4 |
 
-**Chuẩn kỹ thuật**
+**Chuẩn kỹ thuật** (33)
 | id | Mục | Weight |
 |---|---|---|
-| https | Kết nối bảo mật (HTTPS) | 8 |
+| https | Kết nối bảo mật (HTTPS) | 7 |
 | lang | Định nghĩa ngôn ngữ (lang) | 4 |
 | charset | Bảng mã ký tự (charset) | 4 |
-| h1 | Tiêu đề chính (h1) | 8 |
+| h1 | Tiêu đề chính (h1) | 7 |
 | heading_system | Hệ thống đề mục (h2–h6) | 4 |
+| links | Liên kết (link) | 3 |
 | analytics | Đo lường truy cập (Analytics) | 4 |
 
-**Di động & hình ảnh**
+**Di động & hình ảnh** (26)
 | id | Mục | Weight |
 |---|---|---|
-| viewport | Hiển thị trên di động (viewport) | 10 |
-| img_alt | Mô tả ảnh (alt) | 8 |
+| viewport | Hiển thị trên di động (viewport) | 9 |
+| img_alt | Mô tả ảnh (alt) | 7 |
 | favicon | Biểu tượng tab (favicon) | 4 |
 | theme_color | Màu giao diện (theme-color) | 2 |
 | lazy_load | Tải ảnh trễ (lazy loading) | 4 |
@@ -123,6 +128,19 @@ và **1 dòng** `<script defer src="js/&lt;ten-moc&gt;.js">` cuối `results.htm
 
 ## 7. Chi tiết API (khi cần hiểu sâu — không dùng)
 
-`GET /api/fetch?url=<encoded>` chỉ kéo HTML thô về cho trình duyệt (tránh CORS/biểu chặn):
+`GET /api/fetch?url=<encoded>` chỉ kéo HTML thô về cho trình duyệt (tránh CORS và bị chặn):
 - 200 → `{ html, statusCode, finalUrl, elapsedMs }`
 - lỗi → `{ error, detail }` (thông báo tiếng Việt thân thiện: hết giờ, 404, bị chặn, không phải HTML, quá lớn…)
+
+Có thêm chế độ phụ `&soft=1` — riêng mốc 1 dùng để lấy robots.txt/sitemap.xml (lỗi 404 của
+trang gốc trả về 200 kèm `statusCode` thay vì báo lỗi). Các mốc 2–5 không cần biết flag này.
+
+## 8. Lịch sử hợp đồng
+
+- **v1.1** (mốc 1 ban đầu) — 19 mục.
+- **v1.2** (hiện tại) — thêm 3 mục: `robots_txt`, `sitemap` (nhóm SEO & hiển thị) và `links`
+  (nhóm Chuẩn kỹ thuật). Cân chỉnh lại weight để tổng vẫn = 100: title 10→8, meta_description
+  10→8, open_graph 4→3, https 8→7, h1 8→7, viewport 10→9, img_alt 8→7; 3 mục mới mỗi mục 3.
+  Nếu mốc 2 đã tự định trọng số riêng thì cứ dùng — weight chỉ là gợi ý; nhưng **danh sách 22 id
+  ở mục 3 là bắt buộc** (rendering và xử lý `unknown` phải đúng cho cả 3 mục mới).
+  Dữ liệu robots/sitemap do mốc 1 fetch sẵn vào `meta` — mốc 2–5 chỉ đọc `checks[]` như cũ.

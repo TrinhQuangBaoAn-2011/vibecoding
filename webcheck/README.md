@@ -1,7 +1,7 @@
 # WebCheck
 
 Công cụ **kiểm tra nhanh nền móng website** dành cho chủ doanh nghiệp nhỏ — Đề 5.
-Mốc này phụ trách **chức năng số 1**: nhập URL → kiểm tra tự động 19 hạng mục cơ bản **phía
+Mốc này phụ trách **chức năng số 1**: nhập URL → kiểm tra tự động 22 hạng mục cơ bản **phía
 client** → hiện checklist kèm giải thích và gợi ý sửa bằng tiếng Việt.
 
 Các phần còn lại của dự án (thống nhất phân công):
@@ -14,7 +14,7 @@ Cần Node.js 20+.
 
 ```bash
 npm install          # 1 lần, chỉ cho dev-test (linkedom)
-npm test             # 19 test của bộ phân tích
+npm test             # 22 test của bộ phân tích
 npx vercel dev       # chạy toàn app + API ở localhost
 ```
 
@@ -47,13 +47,13 @@ phải qua `npx vercel dev`. Muốn xem trang kết quả không cần mạng: m
 ├─ results.html      Trang kết quả + slot chờ mốc 2–5
 ├─ styles.css        Giao diện (biến màu 4 mức Đạt/Cảnh báo/Chưa đạt/Không rõ)
 ├─ js/
-│  ├─ analyze.js     TRÁI TIM: 19 mục kiểm tra + renderChecklist + demoResult
+│  ├─ analyze.js     TRÁI TIM: 22 mục kiểm tra + renderChecklist + demoResult
 │  ├─ main.js        Flow trang nhập → gọi API → lưu Result → nhảy trang
 │  └─ results.js     Trang kết quả: đọc Result, dựng tóm tắt + checklist tạm
 ├─ api/
 │  └─ fetch.mjs      Serverless proxy: ?url=… → trả HTML thô (Vercel)
 ├─ tests/
-│  └─ analyze.test.mjs  19 test đặc tả bộ phân tích (node --test)
+│  └─ analyze.test.mjs  22 test đặc tả bộ phân tích (node --test)
 ├─ contract.md       Hợp đồng ghép code cho mốc 2–5
 └─ package.json
 ```

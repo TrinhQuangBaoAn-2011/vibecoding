@@ -11,12 +11,24 @@ const src = readFileSync(join(here, '..', 'js', 'analyze.js'), 'utf8');
 // trình duyệt lẫn qua sandbox ở đây — đây chính là seam công khai của mốc 1.
 const WebCheck = new Function(src + '\n;return WebCheck;')();
 const parse = (h) => new DOMParser().parseFromString(h, 'text/html');
-const run = (html, url = 'https://atlas-cafe.vn/') =>
-  WebCheck.runChecks(html, { inputUrl: url, finalUrl: url, statusCode: 200, elapsedMs: 800 }, parse);
+const GOOD_ROBOTS = 'User-agent: *\nDisallow: /admin/\nSitemap: https://atlas-cafe.vn/sitemap.xml\n';
+const GOOD_SITEMAP = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://atlas-cafe.vn/</loc></url>\n  <url><loc>https://atlas-cafe.vn/thuc-don</loc></url>\n</urlset>';
+// meta mặc định: robots.txt + sitemap.xml giả lập từng fetch sẵn (m1 main.js làm thật).
+// Ghi đè bằng tham số thứ 2: run(GOOD(), { robots: null }) v.v.
+const run = (html, extraMeta = {}) =>
+  WebCheck.runChecks(html, Object.assign({
+    inputUrl: 'https://atlas-cafe.vn/',
+    finalUrl: 'https://atlas-cafe.vn/',
+    statusCode: 200,
+    elapsedMs: 800,
+    robots: { statusCode: 200, text: GOOD_ROBOTS },
+    sitemap: { statusCode: 200, text: GOOD_SITEMAP },
+  }, extraMeta), parse);
 
 const ID_MỌC1 = [
   'title', 'meta_description', 'charset', 'open_graph', 'canonical', 'robots_meta',
-  'https', 'lang', 'h1', 'heading_system', 'structured_data', 'analytics',
+  'robots_txt', 'sitemap',
+  'https', 'lang', 'h1', 'heading_system', 'links', 'structured_data', 'analytics',
   'viewport', 'img_alt', 'favicon', 'theme_color', 'lazy_load',
   'resources', 'page_weight',
 ];
@@ -47,13 +59,14 @@ const GOOD = (title, desc) => `<!DOCTYPE html>
 <h2>Cách dùng</h2>
 <img src="tra-sen.jpg" alt="Hộp quà trà sen" loading="lazy">
 <img src="tra-at.iso.jpg" alt="Trà khô đóng túi" loading="lazy">
+<footer><a href="/thuc-don">Thực đơn</a><a href="https://facebook.com/atelier" target="_blank">Facebook</a></footer>
 </body>
 </html>`;
 
 // ── 1. Bất biến cấu trúc: hợp đồng mà mốc 2–5 dựa vào ───────────────────────
-test('Result v1.1: đủ 19 mục, id đúng hợp đồng, không trùng, weight cộng đúng 100', () => {
+test('Result v1.2: đủ 22 mục, id đúng hợp đồng, không trùng, weight cộng đúng 100', () => {
   const r = run(GOOD());
-  assert.equal(r.version, '1.1');
+  assert.equal(r.version, '1.2');
   assert.equal(r.checks.length, ID_MỌC1.length);
   const ids = r.checks.map((c) => c.id);
   assert.deepEqual([...ids].sort(), [...ID_MỌC1].sort());
@@ -110,6 +123,11 @@ test('Trang trống rỗng: title, description, viewport, charset… đều fail
   // trang không có ảnh: img_alt/lazy_load cho đạt trung lập, không phạt
   assert.equal(m.img_alt.level, 'pass');
   assert.equal(m.lazy_load.level, 'pass');
+  // site-level (robots/sitemap đọc từ meta, không phụ thuộc HTML trang)
+  assert.equal(m.robots_txt.level, 'pass');
+  assert.equal(m.sitemap.level, 'pass');
+  // trang không có liên kết: trung lập
+  assert.equal(m.links.level, 'pass');
 });
 
 // ── 3. Nhánh cảnh báo từng hạng mục ─────────────────────────────────────────
@@ -147,8 +165,8 @@ test('viewport: thiếu width=device-width → warn; thiếu hẳn → fail', ()
 });
 
 test('https: http URL → fail, https → pass', () => {
-  assert.equal(run(GOOD(), 'http://atlas-cafe.vn/').checks.find((c) => c.id === 'https').level, 'fail');
-  assert.equal(run(GOOD(), 'https://atlas-cafe.vn/').checks.find((c) => c.id === 'https').level, 'pass');
+  assert.equal(run(GOOD(), { inputUrl: 'http://atlas-cafe.vn/', finalUrl: 'http://atlas-cafe.vn/' }).checks.find((c) => c.id === 'https').level, 'fail');
+  assert.equal(run(GOOD(), { inputUrl: 'https://atlas-cafe.vn/', finalUrl: 'https://atlas-cafe.vn/' }).checks.find((c) => c.id === 'https').level, 'pass');
 });
 
 test('h1: 2 thẻ → warn; 1 thẻ → pass', () => {
@@ -222,15 +240,56 @@ test('structured_data: JSON-LD sai cú pháp → warn nêu rõ; JSON đúng → 
   assert.equal(run(GOOD()).checks.find((c) => c.id === 'structured_data').level, 'pass');
 });
 
+// ── 3b. Cấp site: robots.txt + sitemap.xml + liên kết ───────────────────────
+test('robots_txt: 404 → warn, Disallow: / → fail, tệp chuẩn có chạy → pass, không có dữ liệu → unknown', () => {
+  const mk = (robots) => run(GOOD(), { robots }).checks.find((c) => c.id === 'robots_txt');
+  assert.equal(mk({ statusCode: 404, text: '' }).level, 'warn');
+  assert.equal(mk({ statusCode: 200, text: 'User-agent: *\nDisallow: /\n' }).level, 'fail');
+  // Chặn riêng từng bot lạ (không phải nhóm '*') là hợp lệ — không được nhầm thành chặn toàn bộ
+  const riêng = mk({ statusCode: 200, text: 'User-agent: AhrefsBot\nDisallow: /\n\nUser-agent: *\nAllow: /\nSitemap: https://atlas-cafe.vn/sitemap.xml' });
+  assert.equal(riêng.level, 'pass');
+  // Disallow: /admin/ KHÔNG bị nhầm thành chặn toàn bộ
+  const ok = mk({ statusCode: 200, text: GOOD_ROBOTS });
+  assert.equal(ok.level, 'pass');
+  assert.ok(ok.detail.toLowerCase().includes('sitemap'), 'detail nên ghi nhận dòng Sitemap khai báo sẵn');
+  assert.equal(mk(null).level, 'unknown');
+});
+
+test('sitemap: 404 → warn, XML <urlset> đọc được → pass nêu số URL, body là HTML → warn, không có dữ liệu → unknown', () => {
+  const mk = (sitemap) => run(GOOD(), { sitemap }).checks.find((c) => c.id === 'sitemap');
+  assert.equal(mk({ statusCode: 404, text: '' }).level, 'warn');
+  const ok = mk({ statusCode: 200, text: GOOD_SITEMAP });
+  assert.equal(ok.level, 'pass');
+  assert.ok(ok.detail.includes('2'), 'detail phải nêu đúng 2 URL trong fixture');
+  assert.equal(mk({ statusCode: 200, text: '<html><body>Trang 404 dễ thương</body></html>' }).level, 'warn');
+  assert.equal(mk(null).level, 'unknown');
+});
+
+test('links: sạch → pass đếm nội/ngoài; href="#" + link rỗng chữ → warn; nhiều link lỗi → fail; trắng → trung lập', () => {
+  // GOOD có 2 anchor trong footer: 1 nội bộ (/thuc-don), 1 ngoài (facebook)
+  const sạch = run(GOOD()).checks.find((c) => c.id === 'links');
+  assert.equal(sạch.level, 'pass');
+  assert.ok(sạch.detail.includes('2'));
+
+  const hỏngVừa = run(GOOD().replace('</body>', '<a href="#">Menu</a><a href="/dat-ban"></a></body>'))
+    .checks.find((c) => c.id === 'links');
+  assert.equal(hỏngVừa.level, 'warn');
+  assert.ok(hỏngVừa.detail.includes('href="#"'), 'detail phải chỉ đích danh liên kết chết');
+
+  const hỏngNhiều = run(GOOD().replace('</body>', Array.from({ length: 6 }, (_, i) => `<a href="#">mục ${i}</a>`).join('') + '</body>'))
+    .checks.find((c) => c.id === 'links');
+  assert.equal(hỏngNhiều.level, 'fail');
+});
+
 // ── 4. renderChecklist — smoke: cấu trúc group/row đầy đủ, glyphs đúng mức ──
-test('renderChecklist: 4 group, 19 dòng, mỗi dòng có glyph + label + detail + suggestion', () => {
+test('renderChecklist: 4 group, 22 dòng, mỗi dòng có glyph + label + detail + suggestion', () => {
   const host = new DOMParser().parseFromString('<div id="kq"></div>', 'text/html');
   const mount = host.getElementById('kq');
   WebCheck.renderChecklist(run(GOOD(), undefined), mount);
   const groups = mount.querySelectorAll('section.check-group');
   assert.equal(groups.length, 4);
   const rows = mount.querySelectorAll('.check-row');
-  assert.equal(rows.length, 19);
+  assert.equal(rows.length, 22);
   for (const row of rows) {
     assert.ok(row.querySelector('.glyph'));
     assert.ok(row.querySelector('.check-label').textContent.length > 3);
@@ -238,11 +297,11 @@ test('renderChecklist: 4 group, 19 dòng, mỗi dòng có glyph + label + detail
   }
 });
 
-// ── 5. Trang demo dựng sẵn cho mốc 2–5: hợp lệ theo v1.1 ────────────────────
-test('demoResult mang đủ 19 mục · dùng đúng shape v1.1.', () => {
+// ── 5. Trang demo dựng sẵn cho mốc 2–5: hợp lệ theo v1.2 ────────────────────
+test('demoResult mang đủ 22 mục · dùng đúng shape v1.2, robots/sitemap mẫu có sẵn.', () => {
   const r = WebCheck.demoResult(parse);
-  assert.equal(r.version, '1.1');
-  assert.equal(r.checks.length, 19);
-  assert.equal(new Set(r.checks.map((c) => c.id)).size, 19);
+  assert.equal(r.version, '1.2');
+  assert.equal(r.checks.length, 22);
+  assert.equal(new Set(r.checks.map((c) => c.id)).size, 22);
   assert.equal(r.checks.reduce((s, c) => s + c.weight, 0), 100);
 });

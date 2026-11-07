@@ -12,26 +12,29 @@
 /* global DOMParser */
 
 const WebCheck = (function () {
-  const VERSION = '1.1';
+  const VERSION = '1.2';
 
   const GROUPS = ['SEO & hiển thị', 'Chuẩn kỹ thuật', 'Di động & hình ảnh', 'Tốc độ tải nội dung'];
 
-  // Định nghĩa 19 hạng mục: id — nhóm — trọng số (gợi ý cho mốc 2 tính điểm).
+  // Định nghĩa 22 hạng mục: id — nhóm — trọng số (gợi ý cho mốc 2 tính điểm; tổng = 100).
   const DEFS = [
-    { id: 'title', group: 'SEO & hiển thị', weight: 10, label: 'Tiêu đề trang (<title>)' },
-    { id: 'meta_description', group: 'SEO & hiển thị', weight: 10, label: 'Mô tả tìm kiếm (meta description)' },
-    { id: 'open_graph', group: 'SEO & hiển thị', weight: 4, label: 'Chia sẻ mạng xã hội (Open Graph)' },
+    { id: 'title', group: 'SEO & hiển thị', weight: 8, label: 'Tiêu đề trang (<title>)' },
+    { id: 'meta_description', group: 'SEO & hiển thị', weight: 8, label: 'Mô tả tìm kiếm (meta description)' },
+    { id: 'open_graph', group: 'SEO & hiển thị', weight: 3, label: 'Chia sẻ mạng xã hội (Open Graph)' },
     { id: 'canonical', group: 'SEO & hiển thị', weight: 4, label: 'Địa chỉ chuẩn (canonical)' },
     { id: 'robots_meta', group: 'SEO & hiển thị', weight: 4, label: 'Chỉ dẫn công cụ tìm kiếm (robots)' },
+    { id: 'robots_txt', group: 'SEO & hiển thị', weight: 3, label: 'Tệp robots.txt (chỉ dẫn quét toàn site)' },
+    { id: 'sitemap', group: 'SEO & hiển thị', weight: 3, label: 'Sơ đồ trang (sitemap.xml)' },
     { id: 'structured_data', group: 'SEO & hiển thị', weight: 4, label: 'Dữ liệu có cấu trúc (JSON-LD)' },
-    { id: 'https', group: 'Chuẩn kỹ thuật', weight: 8, label: 'Kết nối bảo mật (HTTPS)' },
+    { id: 'https', group: 'Chuẩn kỹ thuật', weight: 7, label: 'Kết nối bảo mật (HTTPS)' },
     { id: 'lang', group: 'Chuẩn kỹ thuật', weight: 4, label: 'Định nghĩa ngôn ngữ (lang)' },
     { id: 'charset', group: 'Chuẩn kỹ thuật', weight: 4, label: 'Bảng mã ký tự (charset)' },
-    { id: 'h1', group: 'Chuẩn kỹ thuật', weight: 8, label: 'Tiêu đề chính (h1)' },
+    { id: 'h1', group: 'Chuẩn kỹ thuật', weight: 7, label: 'Tiêu đề chính (h1)' },
     { id: 'heading_system', group: 'Chuẩn kỹ thuật', weight: 4, label: 'Hệ thống đề mục (h2–h6)' },
+    { id: 'links', group: 'Chuẩn kỹ thuật', weight: 3, label: 'Liên kết (link)' },
     { id: 'analytics', group: 'Chuẩn kỹ thuật', weight: 4, label: 'Đo lường truy cập (Analytics)' },
-    { id: 'viewport', group: 'Di động & hình ảnh', weight: 10, label: 'Hiển thị trên di động (viewport)' },
-    { id: 'img_alt', group: 'Di động & hình ảnh', weight: 8, label: 'Mô tả ảnh (alt)' },
+    { id: 'viewport', group: 'Di động & hình ảnh', weight: 9, label: 'Hiển thị trên di động (viewport)' },
+    { id: 'img_alt', group: 'Di động & hình ảnh', weight: 7, label: 'Mô tả ảnh (alt)' },
     { id: 'favicon', group: 'Di động & hình ảnh', weight: 4, label: 'Biểu tượng tab (favicon)' },
     { id: 'theme_color', group: 'Di động & hình ảnh', weight: 2, label: 'Màu giao diện (theme-color)' },
     { id: 'lazy_load', group: 'Di động & hình ảnh', weight: 4, label: 'Tải ảnh trễ (lazy loading)' },
@@ -405,6 +408,130 @@ const WebCheck = (function () {
       'Giữ gọn: đừng nhồi cả thư viện CSS nguyên khối khi chỉ dùng vài class.');
   }
 
+  /* ── Kiểm tra cấp site (robots.txt, sitemap.xml) + liên kết ────────────── */
+
+  // robots/sitemap là dữ liệu ngoài HTML trang: main.js fetch sẵn (qua chế độ ?soft=1)
+  // rồi truyền vào meta dạng { statusCode, text } — không có thì mục này là unknown.
+  function checkRobotsTxt(robots) {
+    if (!robots) {
+      return out('robots_txt', 'unknown',
+        'Không kiểm tra được robots.txt (lỗi mạng hoặc trang chặn truy cập tự động).',
+        'Kiểm tra tay: mở ten-mien.vn/robots.txt trong trình duyệt.');
+    }
+    const text = String(robots.text || '');
+    if (/^\s*<!doctype\s+html|<html/i.test(text)) {
+      return out('robots_txt', 'warn',
+        'Địa chỉ robots.txt trả về trang HTML thay vì tệp chỉ dẫn — tệp robots.txt chưa được đặt ở thư mục gốc.',
+        'Tạo tệp robots.txt dạng text thuần, đặt tại ten-mien.vn/robots.txt (thư mục gốc, không phải trong thư mục con).');
+    }
+    if ((robots.statusCode || 0) >= 400) {
+      return out('robots_txt', 'warn',
+        'Website chưa có tệp robots.txt — không sai, nhưng đang bỏ lỡ quyền khai báo sitemap và không chặn được các trang không cần máy quét ghé vào.',
+        'Tạo tệp robots.txt đơn giản xếp ở thư mục gốc:\nUser-agent: *\nDisallow: /admin/\nSitemap: ten-mien.vn/sitemap.xml');
+    }
+    // robots.txt cần đọc theo nhóm User-agent (theo chuẩn): "Disallow: /" chỉ là
+    // chặn toàn bộ khi thuộc nhóm '*' (nhóm chung) — các site hay chặn riêng
+    // từng bot xấu (AhrefsBot, Scrapy…) bằng cách này, đó là hợp lệ.
+    let agents = [];
+    let seenAnyAgent = false;
+    let wildBlocked = false;   // nhóm '*' bị chặn toàn bộ
+    let strayBlock = false;    // "Disallow: /" đứng ngoài mọi nhóm user-agent
+    let rules = 0;
+    for (const raw of text.split(/\r?\n/)) {
+      const line = raw.split('#')[0].trim();
+      if (!line) { agents = []; continue; } // dòng trống kết thúc 1 nhóm
+      let m = line.match(/^user-agent:\s*(.+)$/i);
+      if (m) { seenAnyAgent = true; agents.push(m[1].trim().toLowerCase()); continue; }
+      m = line.match(/^disallow:\s*(.*)$/i);
+      if (m) {
+        rules++;
+        if (/^\/\*?\s*$/.test(m[1])) { // chỉ "/" hoặc "/*" → chặn tất cả
+          if (!agents.length) strayBlock = true;
+          else if (agents.includes('*')) wildBlocked = true;
+        }
+      }
+    }
+    if (wildBlocked || (strayBlock && !seenAnyAgent)) {
+      return out('robots_txt', 'fail',
+        'robots.txt đang chặn toàn bộ website cho nhóm công cụ chung (User-agent: * — dòng "Disallow: /") — Google không thể quét bất kỳ trang nào.',
+        'Xoá dòng "Disallow: /" trong nhóm "User-agent: *" hoặc thay bằng các thư mục cụ thể thật sự cần chặn (ví dụ /admin/). Các dòng chặn riêng bot khác (AhrefsBot…) có thể giữ nguyên.');
+    }
+    const hasSitemap = /sitemap:\s*\S/i.test(text);
+    return out('robots_txt', 'pass',
+      `robots.txt hoạt động — nhóm công cụ chung (User-agent: *) được cho phép quét${rules ? `, ${rules} dòng chặn riêng các bot không cần` : ''}${hasSitemap ? ', đã khai báo sơ đồ trang (sitemap)' : ''}.`,
+      hasSitemap
+        ? 'Giữ nguyên; cập nhật thêm quy tắc khi có khu vực mới cần chặn.'
+        : 'Bổ sung dòng "Sitemap: ten-mien.vn/sitemap.xml" để máy tìm kiếm tìm sơ đồ trang nhanh hơn.');
+  }
+
+  function checkSitemap(sitemap) {
+    if (!sitemap) {
+      return out('sitemap', 'unknown',
+        'Không kiểm tra được sitemap.xml (lỗi mạng hoặc trang chặn truy cập tự động).',
+        'Kiểm tra tay: mở ten-mien.vn/sitemap.xml trong trình duyệt.');
+    }
+    const text = String(sitemap.text || '');
+    if ((sitemap.statusCode || 0) >= 400) {
+      return out('sitemap', 'warn',
+        'Chưa có sơ đồ trang (sitemap.xml) — Google vẫn tìm được từng trang, nhưng chậm hơn và bỏ sót trang mới.',
+        'Tạo sitemap.xml (plugin SEO hoặc trình tạo tự động), khai báo trong robots.txt rồi submit trong Google Search Console.');
+    }
+    if (!/<urlset|<sitemapindex/i.test(text)) {
+      return out('sitemap', 'warn',
+        'Địa chỉ sitemap.xml phản hồi nhưng nội dung không đúng định dạng XML sơ đồ trang — máy tìm kiếm đọc không được.',
+        'Xuất lại sitemap đúng chuẩn (thẻ gốc <urlset> hoặc <sitemapindex>) và đặt tại ten-mien.vn/sitemap.xml.');
+    }
+    const urls = (text.match(/<loc>/gi) || []).length;
+    return out('sitemap', 'pass',
+      `Sitemap.xml đọc được — khai báo ${urls} địa chỉ trang.`,
+      'Cập nhật lại sitemap mỗi khi thêm trang/sản phẩm mới; submit trong Google Search Console.');
+  }
+
+  function checkLinks(doc, meta) {
+    const anchors = Array.from(doc.querySelectorAll('a[href]'));
+    if (anchors.length === 0) {
+      return out('links', 'pass',
+        'Trang không dùng liên kết nào (trong HTML tĩnh) — không có gì để chấm.',
+        'Khi thêm menu, dùng thẻ <a href> thật với chữ mô tả rõ từng đường dẫn.');
+    }
+    let internal = 0;
+    let external = 0;
+    let dead = 0;     // href="#" / javascript: / href hỏng
+    let emptyText = 0; // <a> trống chữ (kể cả khi bọc ảnh không alt)
+    let baseOrigin = '';
+    try { baseOrigin = new URL(meta.finalUrl || meta.inputUrl || '').origin; } catch { /* giữ '' */ }
+    for (const a of anchors) {
+      const href = (a.getAttribute('href') || '').trim();
+      if (!href || href === '#' || /^javascript:/i.test(href)) {
+        dead++;
+      } else {
+        try {
+          const u = new URL(href, baseOrigin || undefined);
+          if (baseOrigin && u.origin === baseOrigin) internal++; else external++;
+        } catch { dead++; }
+      }
+      if (!a.textContent.trim() && !a.querySelector('img')) emptyText++;
+    }
+    const flawed = dead + emptyText;
+    const count = `Trang có ${anchors.length} liên kết: ${internal} nội bộ, ${external} ngoài.`;
+    const issues = [];
+    if (dead) issues.push(`${dead} liên kết chết (href="#")`);
+    if (emptyText) issues.push(`${emptyText} liên kết không có chữ`);
+    if (flawed === 0) {
+      return out('links', 'pass',
+        `${count} Không phát hiện liên kết lỗi.`,
+        'Giữ chữ mô tả rõ ràng cho mỗi liên kết khi bổ sung mục mới.');
+    }
+    if (flawed <= 5) {
+      return out('links', 'warn',
+        `${count} Cần sửa: ${issues.join(' và ')} — khách bấm không thấy gì, máy quét đi vào ngõ cụt.`,
+        'Trỏ mỗi link chết sang trang thật hoặc xoá đi; liên kết bọc hình cần thêm chữ hoặc aria-label.');
+    }
+    return out('links', 'fail',
+      `${count} Và ${flawed} liên kết lỗi (${issues.join(' và ')}) — số lượng quá lớn, có khả năng trang dính chữ nhúng/khung rác cần dọn.`,
+      'Kiểm tra lại khối inject/plugin chèn link: gỡ phần chèn lạ, làm sạch hệ thống liên kết toàn trang.');
+  }
+
   /* ── Điểm vào chính ─────────────────────────────────────────────────────── */
 
   function runChecks(html, meta = {}, buildDoc) {
@@ -424,12 +551,15 @@ const WebCheck = (function () {
       open_graph: checkOpenGraph(doc),
       canonical: checkCanonical(doc),
       robots_meta: checkRobots(doc),
+      robots_txt: checkRobotsTxt(meta.robots),
+      sitemap: checkSitemap(meta.sitemap),
       structured_data: checkStructuredData(doc),
       https: checkHttps(meta),
       lang: checkLang(doc),
       charset: checkCharset(html),
       h1: checkH1(doc),
       heading_system: checkHeadingSystem(doc, h1Count),
+      links: checkLinks(doc, meta),
       analytics: checkAnalytics(html),
       viewport: checkViewport(doc),
       img_alt: checkImages(doc),
@@ -542,16 +672,31 @@ const WebCheck = (function () {
 <script src="/jquery.min.js"></script><script src="/slider.js"></script><script src="/ban-do.js"></script>
 <script src="/chat.js"></script><script src="/form.js"></script>
 <link rel="stylesheet" href="/main.css"><link rel="stylesheet" href="/slider.css"><link rel="stylesheet" href="/shop.css">
+<footer>
+<a href="#">Xem menu</a>
+<a href="/dat-ban">Đặt bàn</a>
+<a href="https://facebook.com/quanmoc">Facebook của quán</a>
+</footer>
 </body>
 </html>`;
 
-  function demoResult(buildDoc) {
-    return runChecks(DEMO_HTML, {
-      inputUrl: 'quan-moc-da-lat.vn',
-      finalUrl: 'https://quan-moc-da-lat.vn/',
+  const DEMO_META = {
+    inputUrl: 'quan-moc-da-lat.vn',
+    finalUrl: 'https://quan-moc-da-lat.vn/',
+    statusCode: 200,
+    elapsedMs: 1240,
+    robots: {
       statusCode: 200,
-      elapsedMs: 1240,
-    }, buildDoc);
+      text: 'User-agent: *\nDisallow: /admin/\n\nSitemap: https://quan-moc-da-lat.vn/sitemap.xml\n',
+    },
+    sitemap: {
+      statusCode: 200,
+      text: '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://quan-moc-da-lat.vn/</loc></url>\n  <url><loc>https://quan-moc-da-lat.vn/san-pham</loc></url>\n  <url><loc>https://quan-moc-da-lat.vn/dat-ban</loc></url>\n</urlset>',
+    },
+  };
+
+  function demoResult(buildDoc) {
+    return runChecks(DEMO_HTML, DEMO_META, buildDoc);
   }
 
   return { runChecks, renderChecklist, demoResult, DEFS, VERSION };
