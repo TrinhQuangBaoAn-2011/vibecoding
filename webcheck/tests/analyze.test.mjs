@@ -241,9 +241,12 @@ test('structured_data: JSON-LD sai cú pháp → warn nêu rõ; JSON đúng → 
 });
 
 // ── 3b. Cấp site: robots.txt + sitemap.xml + liên kết ───────────────────────
-test('robots_txt: 404 → warn, Disallow: / → fail, tệp chuẩn có chạy → pass, không có dữ liệu → unknown', () => {
+test('robots_txt: 404 → warn, 403/5xx (site chặn bot, server sự cố) → unknown, Disallow: / → fail, tệp chuẩn có chạy → pass, không có dữ liệu → unknown', () => {
   const mk = (robots) => run(GOOD(), { robots }).checks.find((c) => c.id === 'robots_txt');
   assert.equal(mk({ statusCode: 404, text: '' }).level, 'warn');
+  // HTTP ≠ 404 nghĩa là không fetch được tệp (chặn/sự cố) — không thể kết luận "chưa có tệp" → unknown
+  assert.equal(mk({ statusCode: 403, text: '' }).level, 'unknown');
+  assert.equal(mk({ statusCode: 500, text: '' }).level, 'unknown');
   assert.equal(mk({ statusCode: 200, text: 'User-agent: *\nDisallow: /\n' }).level, 'fail');
   // Chặn riêng từng bot lạ (không phải nhóm '*') là hợp lệ — không được nhầm thành chặn toàn bộ
   const riêng = mk({ statusCode: 200, text: 'User-agent: AhrefsBot\nDisallow: /\n\nUser-agent: *\nAllow: /\nSitemap: https://atlas-cafe.vn/sitemap.xml' });
@@ -255,9 +258,11 @@ test('robots_txt: 404 → warn, Disallow: / → fail, tệp chuẩn có chạy �
   assert.equal(mk(null).level, 'unknown');
 });
 
-test('sitemap: 404 → warn, XML <urlset> đọc được → pass nêu số URL, body là HTML → warn, không có dữ liệu → unknown', () => {
+test('sitemap: 404 → warn, 403/5xx → unknown, XML <urlset> đọc được → pass nêu số URL, body là HTML → warn, không có dữ liệu → unknown', () => {
   const mk = (sitemap) => run(GOOD(), { sitemap }).checks.find((c) => c.id === 'sitemap');
   assert.equal(mk({ statusCode: 404, text: '' }).level, 'warn');
+  assert.equal(mk({ statusCode: 403, text: '' }).level, 'unknown');
+  assert.equal(mk({ statusCode: 503, text: '' }).level, 'unknown');
   const ok = mk({ statusCode: 200, text: GOOD_SITEMAP });
   assert.equal(ok.level, 'pass');
   assert.ok(ok.detail.includes('2'), 'detail phải nêu đúng 2 URL trong fixture');

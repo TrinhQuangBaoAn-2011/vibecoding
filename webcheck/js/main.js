@@ -15,6 +15,7 @@
   const button = document.getElementById('btn-go');
   const help = document.getElementById('url-help');
   const statusLine = document.getElementById('status-line');
+  const statusText = document.getElementById('status-text');
   const errorBox = document.getElementById('error-box');
   const errorTitle = document.getElementById('error-title');
   const errorDetail = document.getElementById('error-detail');
@@ -39,10 +40,9 @@
     button.setAttribute('aria-busy', String(on));
     if (on) {
       statusLine.hidden = false;
-      statusLine.textContent = hostLabel
+      statusText.textContent = hostLabel
         ? `Đang tải ${hostLabel} — ${TIMEOUT_NOTICE}…`
         : `Đang tải — ${TIMEOUT_NOTICE}…`;
-      statusLine.setAttribute('aria-live', 'polite');
     } else {
       statusLine.hidden = true;
     }

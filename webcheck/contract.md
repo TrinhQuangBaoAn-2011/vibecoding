@@ -102,7 +102,7 @@ Tổng weight = 100.
 | Mốc | Slot id | Nhiệm vụ |
 |---|---|---|
 | 2 | `#score-slot` | Điểm /100 + tổng hợp theo nhóm |
-| 3 | `#ai-slot` | Nhận xét AI — **khung `js/moc3-ai.js` + thẻ script đã cắm sẵn**, chỉ thay 1 hàm `layNhanXet()`; spec đầy đủ ở mục 9 |
+| 3 | `#ai-slot` | Nhận xét AI — **khung `js/moc3-ai.js` + thẻ script đã cắm sẵn**, chỉ đụng 2 chổ đánh dấu "VIỆC CỦA MỘC 3"; spec đầy đủ ở mục 8 |
 | 4 | `#export-slot` | Nút xuất báo cáo text (copy gửi khách) — nên dựng từ Result để không phụ thuộc mốc 3; nếu muốn lồng phần AI thì đọc DOM `#ai-slot` khi có |
 | 5 | `#history-slot` | Lịch sử các lần kiểm tra (localStorage do mốc 5 tự quản, key riêng) |
 
@@ -116,6 +116,7 @@ thêm file `js/<ten-moc>.js` của mình và **1 dòng** `<script defer src="js/
   - `runChecks(html, meta, buildDoc)` — chạy lại bộ phân tích (hiếm khi cần; main.js đã làm).
   - `renderChecklist(result, mount)` — checklist tạm của mốc 1; mốc 2 thay phần này bằng bảng chấm điểm đẹp (chỉ cần đổi nội dung bên dưới `#score-slot`, có thể dùng `#checklist` lại hoặc dựng riêng DOM của mình).
   - `demoResult(buildDoc)` — Result mẫu.
+  - `docKetQua()` — nạp Result giúp bạn: `?demo=1` → Result mẫu, ngược lại đọc `sessionStorage["webcheck:result"]`; trả `null` khi hỏng/shape sai. **Mốc 2–5 nên dùng hàm này thay tự đọc sessionStorage.**
 - `styles.css` có sẵn biến màu 4 mức: `--pass/--warn/--fail/--unknown` + nền `*-bg` — dùng trùng để cả trang một giọng.
 
 ## 6. Quy tắc giữ cho ghép không đau
@@ -140,9 +141,10 @@ trang gốc trả về 200 kèm `statusCode` thay vì báo lỗi). Các mốc 2�
 ## 8. Mốc 3 — Nhận xét AI (spec + khung sẵn, dùng để vibecode tiếp)
 
 Khung **hoạt động được ngay**: `js/moc3-ai.js` (thẻ `<script defer>` đã cắm vào `results.html`).
-Bạn mốc 3 chỉ cần **thay đúng 1 hàm `layNhanXet(result)`** phía cuối file — phần đọc dữ liệu,
-render, báo lỗi và fallback đã dựng xong. Chưa cắm AI thì khung demo được bằng "bản dự phóng"
-(rule-heuristic) nên cả nhóm không bị kẹt demo.
+Bạn mốc 3 chỉ đụng **2 chổ đánh dấu `VIỆC CỦA MỘC 3`** trong file: (1) hàm `layNhanXet(result)` —
+cắm lời gọi AI thật; (2) một dòng chú thích trong `render()` khi đã cắm AI thật. Phần đọc dữ liệu
+(dùng `WebCheck.docKetQua()`), render, báo lỗi và fallback đã dựng xong. Chưa cắm AI thì khung
+demo được bằng "bản dự phóng" (rule-heuristic) nên cả nhóm không bị kẹt demo.
 
 **Input** (khung đã lấy sẵn): object Result v1.2 — hữu dụng nhất là `result.title` và
 `result.checks[]` (mỗi mục: `label` tiếng Việt, `level` pass/warn/fail/unknown, `detail`,
@@ -157,6 +159,8 @@ render, báo lỗi và fallback đã dựng xong. Chưa cắm AI thì khung demo
   improvements: ['việc cần làm 1', 'việc cần làm 2', 'việc cần làm 3'],
 }
 // đúng 3 phần tử mỗi mảng, mỗi câu ≤ 160 ký tự, tiếng Việt
+// (lưu ý: ràn buộc "đúng 3 phần tử" áp cho lời gọi AI thật; bản dự phóng fallback
+// được phép trả ít hơn — render đã đón cả mảng <3)
 ```
 
 **Ba cách làm AI — chọn 1 làm đường chính:**
@@ -195,3 +199,7 @@ Dữ liệu 22 hạng mục: <JSON checks[]>
   Nếu mốc 2 đã tự định trọng số riêng thì cứ dùng — weight chỉ là gợi ý; nhưng **danh sách 22 id
   ở mục 3 là bắt buộc** (rendering và xử lý `unknown` phải đúng cho cả 3 mục mới).
   Dữ liệu robots/sitemap do mốc 1 fetch sẵn vào `meta` — mốc 2–5 chỉ đọc `checks[]` như cũ.
+- **v1.2 — tinh chỉnh sau review (cùng bản)**: robots.txt/sitemap chỉ trả `warn` ("chưa có tệp")
+  khi HTTP **404**; 403/5xx → `unknown` (site chặn bot / server sự cố — đúng định nghĩa mục 2,
+  đừng kết luận nhầm). Thêm `WebCheck.docKetQua()` (mục 5) — mốc 2–5 dùng nạp Result; spinner
+  trang nhập (plan yêu cầu, giờ CSS thật sự sử dụng).

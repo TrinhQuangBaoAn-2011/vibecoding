@@ -60,7 +60,7 @@ phải qua `npx vercel dev`. Muốn xem trang kết quả không cần mạng: m
 
 ## Checklist nộp bài (Mốc 1)
 
-- [ ] `npm test` xanh 19/19
+- [ ] `npm test` xanh 22/22
 - [ ] Link live: nhập được 3 kiểu địa chỉ (1 site tốt, 1 site http, 1 domain không tồn tại)
 - [ ] `results.html?demo=1` chạy được (dụng để mốc 2–5 dựng phần của mình khi chưa có mạng)
 - [ ] `contract.md` gửi đủ cho 3 bạn; ai cũng biết slot cắm của mình

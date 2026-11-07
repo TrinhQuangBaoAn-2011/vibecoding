@@ -1,33 +1,19 @@
 'use strict';
 /*
  * WebCheck — trang kết quả (Mốc 1, Đề 5)
- * Đọc Result (JSON) từ sessionStorage key "webcheck:result" rồi dựng:
- *   phần tóm tắt + checklist tạm (WebCheck.renderChecklist) + các slot trống
- *   chờ mốc 2 (điểm), 3 (AI), 4 (xuất báo cáo), 5 (lịch sử).
- * Sa khi mở trực tiếp results.html?demo=1 → dùng Result mẫu (không cần mạng),
+ * Đọc Result qua WebCheck.docKetQua() (?demo=1 → Result mẫu, ngược lại sessionStorage)
+ * rồi dựng: phần tóm tắt + checklist tạm (WebCheck.renderChecklist) + các slot trống
+ * chờ mốc 2 (điểm), 3 (AI), 4 (xuất báo cáo), 5 (lịch sử).
+ * Nếu mở trực tiếp results.html?demo=1 → dùng Result mẫu (không cần mạng),
  * các mốc dựng phần của mình dựa trên dữ liệu này được ngay.
  */
 
 (function () {
-  const RESULT_KEY = 'webcheck:result';
-  const params = new URLSearchParams(location.search);
-  const isDemo = params.has('demo');
-
   const summary = document.getElementById('summary');
   const empty = document.getElementById('empty');
 
-  let result = null;
-  if (isDemo) {
-    result = WebCheck.demoResult();
-  } else {
-    try {
-      result = JSON.parse(sessionStorage.getItem(RESULT_KEY));
-    } catch {
-      result = null;
-    }
-  }
-
-  if (!result || !Array.isArray(result.checks) || !result.checks.length) {
+  const result = WebCheck.docKetQua();
+  if (!result) {
     empty.hidden = false;
     return;
   }

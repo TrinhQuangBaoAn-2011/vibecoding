@@ -3,9 +3,9 @@
  * WebCheck — bộ phân tích phía client (Mốc 1, Đề 5)
  * ---------------------------------------------------------------
  * File này là "hợp đồng sống" của dự án:
- *   - runChecks(html, meta, buildDoc) → Object Result v1.1 (chạy thuần, không gọi mạng)
+ *   - runChecks(html, meta, buildDoc) → Object Result v1.2 (chạy thuần, không gọi mạng)
  *   - renderChecklist(result, mount) → dựng checklist tối giản lên DOM
- *   - demoResult() → 1 Result mẫu để mốc 2–5 làm việc khi chưa có mạng
+ *   - demoResult() → Result mẫu; docKetQua() → nạp Result (demo?/sessionStorage) cho mốc 2–5
  * Mốc 2–5 đọc kết quả qua sessionStorage key "webcheck:result" (main.js ghi).
  * KHÔNG sửa file này ở các mốc sau (độc quyền của mốc 1).
  */
@@ -13,8 +13,6 @@
 
 const WebCheck = (function () {
   const VERSION = '1.2';
-
-  const GROUPS = ['SEO & hiển thị', 'Chuẩn kỹ thuật', 'Di động & hình ảnh', 'Tốc độ tải nội dung'];
 
   // Định nghĩa 22 hạng mục: id — nhóm — trọng số (gợi ý cho mốc 2 tính điểm; tổng = 100).
   const DEFS = [
@@ -42,6 +40,9 @@ const WebCheck = (function () {
     { id: 'page_weight', group: 'Tốc độ tải nội dung', weight: 2, label: 'Dung lượng HTML' },
   ];
 
+  // Thứ tự nhóm lấy đúng thứ tự xuất hiện lần đầu trong DEFS — thiết kế chỉ sửa 1 chỗ (DEFS).
+  const GROUPS = [...new Set(DEFS.map((d) => d.group))];
+
   const def = (id) => DEFS.find((d) => d.id === id);
   // level → passed: giữ API cũ mà mốc 2 có thể đã đợi ("pass" mới là đạt).
   const LEVEL_PASSED = { pass: true, warn: false, fail: false, unknown: null };
@@ -49,11 +50,12 @@ const WebCheck = (function () {
   const LEVEL_WORDS = { pass: 'Đạt', warn: 'Cảnh báo', fail: 'Chưa đạt', unknown: 'Không rõ' };
 
   function out(id, level, detail, suggestion) {
+    const d = def(id);
     return {
       id,
-      label: def(id).label,
-      group: def(id).group,
-      weight: def(id).weight,
+      label: d.label,
+      group: d.group,
+      weight: d.weight,
       level,
       passed: LEVEL_PASSED[level],
       detail,
@@ -424,7 +426,15 @@ const WebCheck = (function () {
         'Địa chỉ robots.txt trả về trang HTML thay vì tệp chỉ dẫn — tệp robots.txt chưa được đặt ở thư mục gốc.',
         'Tạo tệp robots.txt dạng text thuần, đặt tại ten-mien.vn/robots.txt (thư mục gốc, không phải trong thư mục con).');
     }
-    if ((robots.statusCode || 0) >= 400) {
+    const code = robots.statusCode || 0;
+    if (code >= 400) {
+      if (code !== 404) {
+        // 403 (site chặn bot), 5xx (sự cố server): KHÔNG kết luận được tệp có hay không
+        // — đúng định nghĩa `unknown` trong hợp đồng (mục 2), đừng nhầm thành "chưa có tệp".
+        return out('robots_txt', 'unknown',
+          `Máy chủ trả về HTTP ${code} khi lấy robots.txt — không xác định được website có tệp này hay không (site chặn bot tự động, hoặc máy chủ đang sự cố).`,
+          'Kiểm tra tay: mở ten-mien.vn/robots.txt trong trình duyệt. Nếu tệp tồn tại và hợp lệ thì không cần sửa gì.');
+      }
       return out('robots_txt', 'warn',
         'Website chưa có tệp robots.txt — không sai, nhưng đang bỏ lỡ quyền khai báo sitemap và không chặn được các trang không cần máy quét ghé vào.',
         'Tạo tệp robots.txt đơn giản xếp ở thư mục gốc:\nUser-agent: *\nDisallow: /admin/\nSitemap: ten-mien.vn/sitemap.xml');
@@ -471,7 +481,14 @@ const WebCheck = (function () {
         'Kiểm tra tay: mở ten-mien.vn/sitemap.xml trong trình duyệt.');
     }
     const text = String(sitemap.text || '');
-    if ((sitemap.statusCode || 0) >= 400) {
+    const code = sitemap.statusCode || 0;
+    if (code >= 400) {
+      if (code !== 404) {
+        // 403/5xx: không kết luận được — phân biệt rõ với 404 (thật sự chưa có tệp).
+        return out('sitemap', 'unknown',
+          `Máy chủ trả về HTTP ${code} khi lấy sitemap.xml — không xác định được website có sơ đồ trang hay không (site chặn bot tự động, hoặc máy chủ đang sự cố).`,
+          'Kiểm tra tay: mở ten-mien.vn/sitemap.xml trong trình duyệt (site chặn bot thường trả 403).');
+      }
       return out('sitemap', 'warn',
         'Chưa có sơ đồ trang (sitemap.xml) — Google vẫn tìm được từng trang, nhưng chậm hơn và bỏ sót trang mới.',
         'Tạo sitemap.xml (plugin SEO hoặc trình tạo tự động), khai báo trong robots.txt rồi submit trong Google Search Console.');
@@ -699,7 +716,25 @@ const WebCheck = (function () {
     return runChecks(DEMO_HTML, DEMO_META, buildDoc);
   }
 
-  return { runChecks, renderChecklist, demoResult, DEFS, VERSION };
+  // Nạp Result cho mốc 2–5 (và trang results.js): ?demo=1 → Result mẫu, ngược lại
+  // đọc sessionStorage["webcheck:result"]. Trả null khi hỏng hoặc shape sai — nơi
+  // gọi tự quyết định hiện "trống" hay ẩn slot của mình. Dùng thay tự đọc tay:
+  // mọi trang cùng 1 nguồn sự thật.
+  function docKetQua() {
+    try {
+      if (new URLSearchParams(location.search).has('demo')) {
+        const d = demoResult();
+        if (d && Array.isArray(d.checks) && d.checks.length) return d;
+      }
+    } catch { /* không có location/demo → thử nạp sessionStorage */ }
+    try {
+      const r = JSON.parse(sessionStorage.getItem('webcheck:result'));
+      if (r && Array.isArray(r.checks) && r.checks.length) return r;
+    } catch { /* chưa có kết quả trong session */ }
+    return null;
+  }
+
+  return { runChecks, renderChecklist, demoResult, docKetQua, DEFS, VERSION };
 })();
 
 if (typeof window !== 'undefined') window.WebCheck = WebCheck;

@@ -7,25 +7,22 @@
  *        { summary, strengths[3], improvements[3] }   — spec đầy đủ: contract.md mục 8.
  *   3. Đang hiển thị "bản dự phóng" (rule từ 22 mục) — KHÔNG cần AI, không cần key.
  *
- * Việc của bạn mốc 3: thay đúng HAI chỗ đánh dấu ⬇⬇ "VIỆC CỦA MỘC 3" bên dưới
- * (chọn hướng A: gọi AI trực tiếp, hoặc B: qua api/ai.mjs — so sánh trong contract.md mục 8).
+ * Việc của bạn mốc 3 — 2 chổ đánh dấu "VIỆC CỦA MỘC 3" bên dưới:
+ *   1. hàm layNhanXet() — cắm lời gọi AI thật (hướng A trực tiếp / B qua api/ai.mjs, so sánh ở contract.md mục 8);
+ *   2. dòng chú thích trong render() — đổi chữ khi đã cắm AI thật.
  * Bản dự phóng ở hàm duPhongNhanXet là fallback bắt buộc giữ nguyên (mạng fail/hết hạn mức…).
  */
 (function () {
   const SLOT = document.getElementById('ai-slot');
   if (!SLOT) return;
 
-  let result = null;
-  try {
-    if (new URLSearchParams(location.search).has('demo') && window.WebCheck) {
-      result = window.WebCheck.demoResult();
-    } else {
-      result = JSON.parse(sessionStorage.getItem('webcheck:result'));
-    }
-  } catch { result = null; }
-  if (!result || !Array.isArray(result.checks) || !result.checks.length) return; // slot trống → tự ẩn
+  // docKetQua(): nạp ?demo=1 hoặc sessionStorage — shape sai/hỏng trả null (xem analyze.js).
+  const result = window.WebCheck.docKetQua();
+  if (!result) return; // slot trống → tự ẩn
 
-  /* ── Bản dự phóng (fallback): sinh nhận xét từ chính 22 mục bằng rule ─────── */
+  /* ── Bản dự phóng (fallback): sinh nhận xét từ chính 22 mục bằng rule ───────
+     Mảng được phép <3 phần tử (render đón trước); ràn buộc "đúng 3 phần tử,
+     ≤160 ký tự" của hợp đồng áp cho lời gọi AI thật trong layNhanXet. */
 
   function duPhongNhanXet(res) {
     const c = res.checks;
@@ -88,11 +85,11 @@
     sum.textContent = nx.summary;
     box.appendChild(sum);
 
-    const dua = (autoBoxTitle, items, cls) => {
+    const dua = (tieuDeNhom, items, cls) => {
       if (!items || !items.length) return;
       const t = owner.createElement('p');
       t.className = 'ai-note-sub ' + cls;
-      t.textContent = autoBoxTitle;
+      t.textContent = tieuDeNhom;
       box.appendChild(t);
       const ul = owner.createElement('ul');
       for (const item of items) {
@@ -107,7 +104,8 @@
 
     const foot = owner.createElement('p');
     foot.className = 'ai-note-foot';
-    // mốc 3: khi đã cắm AI thật (hướng A/B) → đổi dòng này thành "Nhận xét do AI tạo từ dữ liệu checklist."
+    /* VIỆC CỦA MỘC 3 (2/2): khi đã cắm AI thật → đổi dòng dưới thành
+       "Nhận xét do AI tạo từ dữ liệu checklist." */
     foot.textContent = 'Bản dự phóng: sinh trực tiếp từ dữ liệu 22 mục — chưa qua AI.';
     box.appendChild(foot);
 
@@ -125,7 +123,8 @@
 
   layNhanXet(result)
     .then((nx) => render(nx))
-    .catch(() => {
+    .catch((err) => {
+      console.warn('[moc3] AI hỏng → hiển thị bản dự phóng:', err && err.message);
       try {
         render(duPhongNhanXet(result));
       } catch {
