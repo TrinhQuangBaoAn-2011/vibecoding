@@ -299,12 +299,14 @@ body {
 
 .check-row {
   display: grid;
-  grid-template-columns: 26px 1fr;
+  grid-template-columns: 26px 1fr auto; /* v1.3: + cột chip điểm */
   gap: 12px;
   padding-block: 13px;
 }
 
 .check-row + .check-row { border-top: 1px solid var(--paper); }
+
+.check-row .check-pts { align-self: start; }
 
 .glyph {
   width: 25px;
@@ -385,4 +387,231 @@ body {
   .input-row { flex-direction: column; }
   #btn-go { width: 100%; }
   .hero { margin-top: 34px; }
+}
+
+/* ════ v1.3 — Mốc 2: khối điểm /100 ═════════════════════════════════════ */
+
+.score { display: grid; gap: 16px; }
+
+.score-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.score-num { margin: 0; line-height: 1; white-space: nowrap; }
+
+.score-big {
+  font-size: 3.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.score-of { font-size: 1.3rem; color: var(--muted); margin-left: 2px; }
+
+.score-side { display: grid; gap: 6px; min-width: 210px; }
+
+.score-grade {
+  margin: 0;
+  display: inline-block;
+  align-self: start;
+  font-weight: 700;
+  font-size: 1.02rem;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--brand-tint);
+  color: var(--brand);
+}
+.score-grade[data-grade="Tốt"]        { background: var(--pass-bg);    color: var(--pass); }
+.score-grade[data-grade="Khá"]        { background: var(--pass-bg);    color: var(--pass); }
+.score-grade[data-grade="Trung bình"] { background: var(--warn-bg);    color: var(--warn); }
+.score-grade[data-grade="Yếu"]        { background: var(--fail-bg);    color: var(--fail); }
+.score-grade[data-grade="Rất yếu"]    { background: var(--fail-bg);    color: var(--fail); }
+
+/* Thống kê đếm theo 4 trạng thái — tái dùng bộ màu :root mặc định */
+.counts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 18px;
+  font-size: 0.94rem;
+}
+.counts .glyph {
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
+  font-weight: 700;
+}
+.counts .c-pass   .glyph { color: var(--pass); }
+.counts .c-warn   .glyph { color: var(--warn); }
+.counts .c-fail   .glyph { color: var(--fail); }
+.counts .c-unknown .glyph { color: var(--unknown); }
+
+/* Thanh điểm theo nhóm */
+.gbars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.gbar-row {
+  display: grid;
+  grid-template-columns: minmax(9.5em, 15em) 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.gbar-name { font-size: 0.93rem; }
+
+.gbar {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--brand-tint);
+  overflow: hidden;
+  display: block;
+}
+
+.gbar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand);
+}
+
+.gbar-pts {
+  font-size: 0.86rem;
+  color: var(--muted);
+  white-space: nowrap;
+  min-width: 8em;
+  text-align: right;
+}
+
+.gbar-note {
+  grid-column: 1 / -1;      /* luôn chiếm nguyên 1 dòng dưới — không chen giữa bar */
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0;
+}
+@media (max-width: 620px) {
+  .gbar-row { grid-template-columns: 9.5em 1fr auto; }
+}
+
+.score-note {
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--unknown-bg);
+  border-radius: var(--radius-s);
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+/* ════ v1.3 — Checklist dạng <details>, chip điểm ══════════════════════ */
+
+details.check-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--sheet);
+  margin: 10px 0;
+}
+
+details.check-group > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+}
+details.check-group > summary::-webkit-details-marker { display: none; }
+details.check-group > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+details.check-group[open] > summary::before { transform: rotate(90deg); }
+details.check-group > summary:hover { background: var(--brand-tint); }
+
+details.check-group > .check-rows {
+  padding: 0 14px 12px;
+  border-top: 1px dashed var(--line);
+  margin-top: 6px;
+}
+
+details.check-group h2 {
+  font-size: 1.02rem;
+  margin: 0;
+  display: inline;
+}
+
+/* khoảng cách giữa tên nhóm và chuỗi "x/y điểm · n/m đạt" */
+details.check-group h2 .group-sum { margin-left: 10px; display: inline-block; }
+
+/* chip điểm từng mục "x/w" — unknown có nền xám riêng */
+.check-pts {
+  font-size: 0.8rem;
+  font-weight: 600;
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--unknown-bg);
+  color: var(--unknown);
+  white-space: nowrap;
+}
+.check-row.level-pass .check-pts   { background: var(--pass-bg);    color: var(--pass); }
+.check-row.level-warn .check-pts   { background: var(--warn-bg);    color: var(--warn); }
+.check-row.level-fail .check-pts   { background: var(--fail-bg);    color: var(--fail); }
+
+/* ════ v1.3 — Mốc 4: xuất báo cáo text ═════════════════════════════════ */
+
+.slot-title {
+  font-size: 1.05rem;
+  margin: 0 0 4px;
+}
+
+.slot-help {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0 0 10px;
+}
+
+.export-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.button-ghost {
+  background: var(--sheet);
+  color: var(--brand);
+  border: 1px solid var(--brand);
+}
+.button-ghost:hover { background: var(--brand-tint); }
+
+.export-flash {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  color: var(--pass);
+  min-height: 1.2em;
+}
+
+.report-view {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  white-space: pre-wrap;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  max-height: 400px;
+  overflow-y: auto;
 }

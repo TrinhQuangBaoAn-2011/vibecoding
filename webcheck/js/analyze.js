@@ -12,32 +12,45 @@
 /* global DOMParser */
 
 const WebCheck = (function () {
-  const VERSION = '1.2';
+  const VERSION = '1.3';
 
-  // Định nghĩa 22 hạng mục: id — nhóm — trọng số (gợi ý cho mốc 2 tính điểm; tổng = 100).
+  // Định nghĩa 34 hạng mục — v1.3: tổng trọng số = 100 (bảng chốt: contract.md mục 3).
+  // ID 22 mục cũ GIỮ NGUYÊN (chỉ gán lại weight); 12 mục mới thêm dưới đây.
   const DEFS = [
-    { id: 'title', group: 'SEO & hiển thị', weight: 8, label: 'Tiêu đề trang (<title>)' },
-    { id: 'meta_description', group: 'SEO & hiển thị', weight: 8, label: 'Mô tả tìm kiếm (meta description)' },
-    { id: 'open_graph', group: 'SEO & hiển thị', weight: 3, label: 'Chia sẻ mạng xã hội (Open Graph)' },
-    { id: 'canonical', group: 'SEO & hiển thị', weight: 4, label: 'Địa chỉ chuẩn (canonical)' },
-    { id: 'robots_meta', group: 'SEO & hiển thị', weight: 4, label: 'Chỉ dẫn công cụ tìm kiếm (robots)' },
-    { id: 'robots_txt', group: 'SEO & hiển thị', weight: 3, label: 'Tệp robots.txt (chỉ dẫn quét toàn site)' },
-    { id: 'sitemap', group: 'SEO & hiển thị', weight: 3, label: 'Sơ đồ trang (sitemap.xml)' },
-    { id: 'structured_data', group: 'SEO & hiển thị', weight: 4, label: 'Dữ liệu có cấu trúc (JSON-LD)' },
-    { id: 'https', group: 'Chuẩn kỹ thuật', weight: 7, label: 'Kết nối bảo mật (HTTPS)' },
-    { id: 'lang', group: 'Chuẩn kỹ thuật', weight: 4, label: 'Định nghĩa ngôn ngữ (lang)' },
-    { id: 'charset', group: 'Chuẩn kỹ thuật', weight: 4, label: 'Bảng mã ký tự (charset)' },
-    { id: 'h1', group: 'Chuẩn kỹ thuật', weight: 7, label: 'Tiêu đề chính (h1)' },
-    { id: 'heading_system', group: 'Chuẩn kỹ thuật', weight: 4, label: 'Hệ thống đề mục (h2–h6)' },
-    { id: 'links', group: 'Chuẩn kỹ thuật', weight: 3, label: 'Liên kết (link)' },
-    { id: 'analytics', group: 'Chuẩn kỹ thuật', weight: 4, label: 'Đo lường truy cập (Analytics)' },
-    { id: 'viewport', group: 'Di động & hình ảnh', weight: 9, label: 'Hiển thị trên di động (viewport)' },
-    { id: 'img_alt', group: 'Di động & hình ảnh', weight: 7, label: 'Mô tả ảnh (alt)' },
-    { id: 'favicon', group: 'Di động & hình ảnh', weight: 4, label: 'Biểu tượng tab (favicon)' },
-    { id: 'theme_color', group: 'Di động & hình ảnh', weight: 2, label: 'Màu giao diện (theme-color)' },
-    { id: 'lazy_load', group: 'Di động & hình ảnh', weight: 4, label: 'Tải ảnh trễ (lazy loading)' },
-    { id: 'resources', group: 'Tốc độ tải nội dung', weight: 2, label: 'Số lượng tài nguyên (JS/CSS)' },
+    { id: 'title', group: 'SEO & hiển thị', weight: 6, label: 'Tiêu đề trang (<title>)' },
+    { id: 'meta_description', group: 'SEO & hiển thị', weight: 6, label: 'Mô tả tìm kiếm (meta description)' },
+    { id: 'open_graph', group: 'SEO & hiển thị', weight: 2, label: 'Chia sẻ mạng xã hội (Open Graph)' },
+    { id: 'canonical', group: 'SEO & hiển thị', weight: 3, label: 'Địa chỉ chuẩn (canonical)' },
+    { id: 'robots_meta', group: 'SEO & hiển thị', weight: 3, label: 'Chỉ dẫn công cụ tìm kiếm (robots)' },
+    { id: 'robots_txt', group: 'SEO & hiển thị', weight: 2, label: 'Tệp robots.txt (chỉ dẫn quét toàn site)' },
+    { id: 'sitemap', group: 'SEO & hiển thị', weight: 2, label: 'Sơ đồ trang (sitemap.xml)' },
+    { id: 'structured_data', group: 'SEO & hiển thị', weight: 2, label: 'Dữ liệu có cấu trúc (JSON-LD)' },
+    { id: 'https', group: 'Chuẩn kỹ thuật', weight: 6, label: 'Kết nối bảo mật (HTTPS)' },
+    { id: 'lang', group: 'Chuẩn kỹ thuật', weight: 3, label: 'Định nghĩa ngôn ngữ (lang)' },
+    { id: 'charset', group: 'Chuẩn kỹ thuật', weight: 2, label: 'Bảng mã ký tự (charset)' },
+    { id: 'h1', group: 'Chuẩn kỹ thuật', weight: 4, label: 'Tiêu đề chính (h1)' },
+    { id: 'heading_system', group: 'Chuẩn kỹ thuật', weight: 2, label: 'Hệ thống đề mục (h2–h6)' },
+    { id: 'links', group: 'Chuẩn kỹ thuật', weight: 2, label: 'Liên kết (link)' },
+    { id: 'analytics', group: 'Chuẩn kỹ thuật', weight: 2, label: 'Đo lường truy cập (Analytics)' },
+    { id: 'duplicate_ids', group: 'Chuẩn kỹ thuật', weight: 1, label: 'ID HTML không trùng' },
+    { id: 'mixed_content', group: 'Chuẩn kỹ thuật', weight: 1, label: 'Không trộn nội dung HTTP trên HTTPS' },
+    { id: 'viewport', group: 'Di động & hình ảnh', weight: 6, label: 'Hiển thị trên di động (viewport)' },
+    { id: 'img_alt', group: 'Di động & hình ảnh', weight: 4, label: 'Mô tả ảnh (alt)' },
+    { id: 'img_wh', group: 'Di động & hình ảnh', weight: 2, label: 'Ảnh khai báo kích thước (width/height)' },
+    { id: 'favicon', group: 'Di động & hình ảnh', weight: 2, label: 'Biểu tượng tab (favicon)' },
+    { id: 'theme_color', group: 'Di động & hình ảnh', weight: 1, label: 'Màu giao diện (theme-color)' },
+    { id: 'lazy_load', group: 'Di động & hình ảnh', weight: 2, label: 'Tải ảnh trễ (lazy loading)' },
+    { id: 'resources', group: 'Tốc độ tải nội dung', weight: 1, label: 'Số lượng tài nguyên (JS/CSS)' },
     { id: 'page_weight', group: 'Tốc độ tải nội dung', weight: 2, label: 'Dung lượng HTML' },
+    { id: 'cta', group: 'Marketing & chuyển đổi', weight: 5, label: 'Nút kêu gọi hành động (CTA)' },
+    { id: 'contact_info', group: 'Marketing & chuyển đổi', weight: 5, label: 'Thông tin liên hệ' },
+    { id: 'contact_form', group: 'Marketing & chuyển đổi', weight: 4, label: 'Biểu mẫu liên hệ' },
+    { id: 'social_links', group: 'Marketing & chuyển đổi', weight: 2, label: 'Liên kết mạng xã hội' },
+    { id: 'policy_links', group: 'Marketing & chuyển đổi', weight: 2, label: 'Trang chính sách / quy định' },
+    { id: 'semantic_html', group: 'Trải nghiệm & truy cập', weight: 4, label: 'Cấu trúc HTML ngữ nghĩa' },
+    { id: 'form_labels', group: 'Trải nghiệm & truy cập', weight: 4, label: 'Trường nhập có nhãn (label)' },
+    { id: 'accessible_names', group: 'Trải nghiệm & truy cập', weight: 3, label: 'Liên kết/nút có tên truy cập' },
+    { id: 'blank_links', group: 'Trải nghiệm & truy cập', weight: 2, label: 'Liên kết mở tab mới có rel bảo mật' },
   ];
 
   // Thứ tự nhóm lấy đúng thứ tự xuất hiện lần đầu trong DEFS — thiết kế chỉ sửa 1 chỗ (DEFS).
@@ -187,16 +200,28 @@ const WebCheck = (function () {
       'Kích hoạt HTTPS bằng chứng chỉ SSL miễn phí (Let\'s Encrypt — hầu hết nhà cung cấp hosting đều có nút bật sẵn).');
   }
 
+  // Mã ngôn ngữ chuẩn (ISO 639-1) — chỉ để cảnh báo "vn"/"vietnamese" kiểu khai báo sai,
+  // không chấm fail trang dùng ngôn ngữ hợp lệ khác.
+  const LANG_CODES = new Set(('aa ab ae af ak am ar as av ay az ba be bg bh bi bm bn bo br bs ca ce ch co cr cs cu cv cy da de dv dz ee el en eo es et eu fa ff fi fj fo fr fy ga gd gl gn gu gv ha he hi ho hr ht hu hy hz ia id ie ig ii ik io is it iu ja jv ka kg ki kj kk kl km kn ko kr ku kv kw ky la lb lg li ln lo lt lu lv mg mi mk ml mn mr ms mt my na nb nd ne ng nl nn no nr nv ny oc oj om or os pa pi pl ps pt qu rm rn ro ru rw sa sc sd se sg si sk sl sm sn so sq sr ss st su sv sw ta te tg th ti tk tl tn to tr ts tt tw ug uk ur uz ve vi vo wa wo xh yi yo za zh zu').split(' '));
+
   function checkLang(doc) {
-    const l = doc.documentElement.getAttribute('lang');
-    if (l && l.trim()) {
-      return out('lang', 'pass',
-        `Đã khai báo ngôn ngữ trang: "${l.trim()}".`,
-        'Giữ thống nhất: các trang con cũng gán lang="vi" (hoặc ngôn ngữ tương ứng của trang đó).');
+    const l = (doc.documentElement.getAttribute('lang') || '').trim();
+    if (!l) {
+      return out('lang', 'fail',
+        'Thẻ <html> không khai báo ngôn ngữ — phần mềm đọc màn hình và công cụ dịch dễ xử lý sai tiếng Việt.',
+        'Thêm lang="vi" vào thẻ <html> phía đầu file.');
     }
-    return out('lang', 'fail',
-      'Thẻ <html> không khai báo ngôn ngữ — phần mềm đọc màn hình và công cụ dịch dễ xử lý sai tiếng Việt.',
-      'Thêm lang="vi" vào thẻ <html> phía đầu file.');
+    const head = l.split('-')[0].toLowerCase();
+    // v1.3 (hợp nhất mục "ngôn ngữ trang chính xác"): mã 2 chữ phải là mã ngôn ngữ
+    // chuẩn — "vn" (mã quốc gia) thay cho "vi" là lỗi người dùng gặp nhiều nhất.
+    if (!/^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i.test(l) || (head.length === 2 && !LANG_CODES.has(head))) {
+      return out('lang', 'warn',
+        `Ngôn ngữ khai báo là "${l}" — không phải mã ngôn ngữ chuẩn (tiếng Việt phải là "vi", không phải "vn"). Phần mềm đọc màn hình và công cụ dịch có thể bỏ qua.`,
+        'Sửa thành mã chuẩn: lang="vi" cho tiếng Việt (hoặc "en", "en-US"… nếu trang dùng ngôn ngữ khác).');
+    }
+    return out('lang', 'pass',
+      `Đã khai báo ngôn ngữ trang: "${l}".`,
+      'Giữ thống nhất: các trang con cũng gán lang="vi" (hoặc ngôn ngữ tương ứng của trang đó).');
   }
 
   function checkH1(doc) {
@@ -410,6 +435,383 @@ const WebCheck = (function () {
       'Giữ gọn: đừng nhồi cả thư viện CSS nguyên khối khi chỉ dùng vài class.');
   }
 
+  /* ── Kiểm tra mới v1.3: marketing & chuyển đổi ──────────────────────────── */
+
+  // CTA nhận bằng tín hiệu cấu trúc (class/id/href) — không chấm theo chữ hiển thị
+  // để tránh是说 nhầm với mọi nút thông thường.
+  const CTA_RE = /(^|[^a-z])(btn|cta|button)([^a-z]|-|$)|dat-(hen|ban|mon|hang|lich)|dang-ky|mua-ngay|tu-van|bao-gia|goi-ngay|thu-mien-phi|book-(now|table)|checkout|add-to-cart|order-now/i;
+  const CONTACT_ROUTE_RE = /lien-he|contact/i;
+
+  function checkCTA(doc) {
+    const els = Array.from(doc.querySelectorAll('a[href], button'));
+    let cta = null;
+    for (const el of els) {
+      const sig = [el.getAttribute('class'), el.getAttribute('id'),
+        el.getAttribute('href'), el.getAttribute('data-cta')]
+        .filter(Boolean).join(' ');
+      if (sig && CTA_RE.test(sig)) { cta = el; break; }
+    }
+    if (cta) {
+      return out('cta', 'pass',
+        'Trang có nút kêu gọi hành động rõ ràng (dấu hiệu: nút được đánh dấu riêng hoặc đường dẫn tới bước hành động như đặt bàn/đăng ký/mua ngay).',
+        'Giữ CTA nổi bật (màu khác nền, gần nội dung chính); một trang nên có ít nhất 1 CTA chính + 1 phụ.');
+    }
+    const soft = els.some((el) => {
+      const href = el.getAttribute('href') || '';
+      return CONTACT_ROUTE_RE.test(href) || CONTACT_ROUTE_RE.test(el.getAttribute('class') || '');
+    });
+    if (soft) {
+      return out('cta', 'warn',
+        'Trang chỉ có đường dẫn tới trang liên hệ, chưa có nút hành động nổi bật (mua/đặt/đăng ký dùng ngay) — khách xem xong dễ lướt đi.',
+        'Thêm nút hành động chính nổi bật: "Đặt bàn ngay", "Nhận báo giá", "Dùng thử miễn phí"… đặt ngay sau phần giới thiệu chính.');
+    }
+    return out('cta', 'fail',
+      'Trang chưa có nút kêu gọi hành động nào — khách không có bước tiếp theo rõ ràng để liên hệ hay mua hàng.',
+      'Thêm nút hành động chính nổi bật: "Đặt bàn ngay", "Nhận báo giá", "Dùng thử miễn phí"… đặt ngay sau phần giới thiệu chính.');
+  }
+
+  function checkContactInfo(doc) {
+    const chan = new Set();
+    for (const a of doc.querySelectorAll('a[href]')) {
+      const href = (a.getAttribute('href') || '').trim().toLowerCase();
+      if (href.startsWith('tel:')) chan.add('hotline (tel:)');
+      if (href.startsWith('mailto:')) chan.add('email (mailto:)');
+    }
+    const text = doc.body ? (doc.body.textContent || '') : (doc.documentElement.textContent || '');
+    const flat = text.replace(/[\s.\-–()]/g, '');
+    if (/(^|\D)0(3|5|7|8|9)\d{8}(\D|$)/.test(flat) || /\+?84(3|5|7|8|9)\d{8}/.test(flat)) {
+      chan.add('số điện thoại trên trang');
+    }
+    const list = [...chan];
+    if (list.length >= 2) {
+      return out('contact_info', 'pass',
+        `Có nhiều kênh liên hệ: ${list.join(', ')} — khách chọn cách tiện nhất (bấm gọi trên di động, gửi email, nhắn tin).`,
+        'Đặt khối liên hệ cố định ở footer + trên phần nhìn đầu tiên; check số còn dùng thì đừng chết máy.');
+    }
+    if (list.length === 1) {
+      return out('contact_info', 'warn',
+        `Chỉ phát hiện 1 kênh liên hệ (${list[0]}) — thiếu phương án dự phòng nếu khách ngại kênh đó.`,
+        'Bổ sung tel: cho điện thoại và email thực; với bán hàng thì thêm Zalo/hotline hỗ trợ.');
+    }
+    return out('contact_info', 'fail',
+      'Không thấy thông tin liên hệ nào trên trang — khách muốn hỏi giá/đặt hàng không biết liên lac với ai.',
+      'Để rõ: số điện thoại (kèm link tel:), email, địa chỉ cửa hàng — tối thiểu 2 kênh ở footer.');
+  }
+
+  function checkContactForm(doc) {
+    const forms = Array.from(doc.querySelectorAll('form'));
+    if (!forms.length) {
+      return out('contact_form', 'fail',
+        'Không tìm thấy biểu mẫu (đặt bàn/hỏi giá/nhận tư vấn) trong HTML trang — khách phải gọi hoặc pm riêng, dễ bỏ dở.',
+        'Thêm form ngắn: tên, SĐT/email, yêu cầu — 3 trường thôi, đặt gần nội dung chính và ở footer.');
+    }
+    for (const f of forms) {
+      const typed = Array.from(f.querySelectorAll('input, textarea, select'));
+      const fillable = typed.filter((el) => {
+        const t = (el.getAttribute('type') || '').toLowerCase();
+        return t !== 'hidden' && t !== 'submit' && t !== 'button' && t !== 'reset' && t !== 'image';
+      });
+      const hasSend = f.querySelector('button') || f.querySelector('input[type="submit" i]');
+      if (fillable.length && hasSend) {
+        return out('contact_form', 'pass',
+          `Có biểu mẫu tương tác (${fillable.length} trường lập + nút gửi) — khách để lại thông tin ngay trên trang.`,
+          'Kiểm tra form đúng khi gtesthửi: khách gửi có tới hòm thư/hệ thống quản lý không; thêm thông báo đặt cược đã gửi owe thành công.');
+      }
+    }
+    return out('contact_form', 'warn',
+      'Có thẻ form nhưng còn thiếu (trường nhập trống hoặc chưa có nút gửi) — nếu form chưa hoàn thiện, khách gửi không được.',
+      'Hoàn thiện form: >=1 trường người dùng điền + nút submit thật (button type="submit" hoặc input type="submit"), gắn action/method đúng.');
+  }
+
+  const SOCIAL_DOMAIN_RE = /(^|\/\/|\.)(facebook\.com|fb\.com|instagram\.com|zalo\.me|youtube\.com|tiktok\.com|linkedin\.com|twitter\.com|x\.com|threads\.net|pinterest\.com|wa\.me|whatsapp\.com)\//i;
+  const SHARE_ONLY_RE = /\/(sharer|share\.php|intent\/tweet|dialog\/share|send\?)/i;
+
+  function checkSocialLinks(doc) {
+    let profile = 0;
+    let share = 0;
+    for (const a of doc.querySelectorAll('a[href]')) {
+      const href = a.getAttribute('href') || '';
+      if (!SOCIAL_DOMAIN_RE.test(href)) continue;
+      if (SHARE_ONLY_RE.test(href)) { share++; continue; }
+      profile++;
+    }
+    if (profile > 0) {
+      return out('social_links', 'pass',
+        `Trang dẫn tới ${profile} kênh mạng xã hội riêng (fanpage, Zalo, TikTok…) — khách theo dõi được tin tức, khuyến mãi.`,
+        'Đặt icon mạng xã hội ở footer; giữ nội dung các kênh đó còn hoạt động (fanpage "cũng" là điểm trừ lớn).');
+    }
+    if (share > 0) {
+      return out('social_links', 'warn',
+        'Chỉ có nút "chia sẻ" tới mạng xã hội, chưa có link kênh riêng của doanh nghiệp — khách không theo dõi được bạn.',
+        'Thêm link fanpage/Zalo/TikTok riêng của cửa hàng vào footer.');
+    }
+    return out('social_links', 'fail',
+      'Không có liên kết mạng xã hội nào trên trang — mất kênh giữ chân khách giá rẻ nhất.',
+      'Tạo fanpage/Zalo Official, đặt link (kèm icon) ở footer và trang liên hệ.');
+  }
+
+  const POLICY_RE = /chinh-sach|chính-sách|dieu-khoan|điều-khoản|quy-dinh|bao-mat|bảo-mật|doi-tra|hoan-tien|privacy|terms|policies?|refund|returns?/i;
+
+  function checkPolicyLinks(doc) {
+    const seen = new Set();
+    for (const a of doc.querySelectorAll('a[href]')) {
+      const href = (a.getAttribute('href') || '');
+      const text = a.textContent || '';
+      if (POLICY_RE.test(href) || POLICY_RE.test(text)) seen.add(href || text.trim());
+    }
+    if (seen.size >= 2) {
+      return out('policy_links', 'pass',
+        `Có ${seen.size} trang chính sách/quy định (bảo mật, điều khoản, đổi trả…) — khách yên tâm hơn khi đặt hàng.`,
+        'Bảo đảm nội dung thật, dễ hiểu, có ngày cập nhật; đừng chỉ để trang chính sách trống.');
+    }
+    if (seen.size === 1) {
+      return out('policy_links', 'warn',
+        'Chỉ thấy 1 trang chính sách/quy định — còn thiếu các nội dung như điều khoản, đổi trả/hoàn tiền.',
+        'Bổ sung các trang quy định còn thiếu (điều khoản sử dụng, chính sách đổi trả) và link vào footer.');
+    }
+    return out('policy_links', 'fail',
+      'Chưa thấy trang chính sách hay quy định nào — với khách mua online, đây là rào cản lớn khi quyết định.',
+      'Soạn tối thiểu: chính sách bảo mật + chính sách đổi trả/hoàn tiền; để link ở footer.');
+  }
+
+  /* ── Kiểm tra mới v1.3: chuẩn kỹ thuật (mổ trong trang) ─────────────────── */
+
+  function checkDuplicateIds(doc) {
+    const seen = new Map();
+    for (const el of doc.querySelectorAll('[id]')) {
+      const id = el.getAttribute('id');
+      if (id) seen.set(id, (seen.get(id) || 0) + 1);
+    }
+    const dup = [...seen.entries()].filter(([, n]) => n > 1);
+    if (dup.length) {
+      return out('duplicate_ids', 'fail',
+        `ID HTML bị trùng: ${dup.slice(0, 3).map(([id, n]) => `id "${id}" xuất hiện ${n} lần`).join('; ')}` +
+        `${dup.length > 3 ? ` và ${dup.length - 3} id khác` : ''} — id phải duy nhất; JS/anchor định tuyến nhầm chỗ.`,
+        'Đổi các id trùng thành tên riêng (ví dụ slide-1, slide-2) hoặc xoá bản thừa; sau đó thử lại từng nút bấm/lần cuộn anchor.');
+    }
+    return out('duplicate_ids', 'pass',
+      `Không phát hiện id trùng trong ${seen.size} phần tử có id.`,
+      'Giữ thói quen đặt id duy nhất; id trùng là lỗi dễ sinh bug khi thêm code mới.');
+  }
+
+  function checkMixedContent(meta, doc) {
+    const base = (meta.finalUrl || meta.inputUrl || '').trim();
+    if (!/^https:\/\//i.test(base)) {
+      return out('mixed_content', 'unknown',
+        'Trang chưa chạy HTTPS nên mục "trộn nội dung không bảo mật" không áp dụng (cần chuyển HTTPS trước).',
+        'Bật HTTPS trước — sau đó mục này sẽ chấm được trên chính trang đó.');
+    }
+    let baseOrigin = '';
+    try { baseOrigin = new URL(base).origin; } catch { /* base không hợp lệ */ }
+    if (!baseOrigin) {
+      return out('mixed_content', 'unknown',
+        'Không xác định được địa chỉ gốc của trang — không kết luận được tài nguyên nào của trang không bảo mật.',
+        'Kiểm tra tay: DevTools tab Console — trình duyệt báo "Mixed Content" nếu còn tài nguyên http://.');
+    }
+    // Cách chấm: đi từng phần tử — script/link/iframe/embed tải qua HTTP sẽ bị
+    // trình duyệt chặn hẳn (fail); ảnh/nhạc/khung tài liệu trình duyệt tự nâng
+    // cấp hoặc cho phép → chỉ cảnh báo (warn) — đúng hướng "không chấm oan".
+    let riskyScript = 0;
+    let riskyImg = 0;
+    for (const el of doc.querySelectorAll('script[src], link[href], iframe[src], embed[src], object[data]')) {
+      const v = (el.getAttribute('src') || el.getAttribute('href') || el.getAttribute('data') || '').trim();
+      let u;
+      try { u = new URL(v, baseOrigin); } catch { continue; }
+      if (u.protocol === 'http:' && u.origin !== baseOrigin) riskyScript++;
+    }
+    for (const el of doc.querySelectorAll('img[src], source[src], video[src], audio[src]')) {
+      const v = (el.getAttribute('src') || '').trim();
+      let u;
+      try { u = new URL(v, baseOrigin); } catch { continue; }
+      if (u.protocol === 'http:' && u.origin !== baseOrigin) riskyImg++;
+    }
+    if (riskyScript > 0) {
+      return out('mixed_content', 'fail',
+        `Trang chạy HTTPS nhưng đang tải ${riskyScript} tài nguyên bảo mật qua HTTP (script/CSS/khung nhúng) — trình duyệt sẽ chặn bớt hoặc gắn cảnh báo "Không an toàn".`,
+        'Đổi hết về https:// (hầu hết CDN đều hỗ trợ SSL) hoặc dùng đường dẫn tương đối (/js/app.js); rà lại plugin/khung cũ.');
+    }
+    if (riskyImg > 0) {
+      return out('mixed_content', 'warn',
+        `Trang chạy HTTPS nhưng có ${riskyImg} ảnh/nhạc gọi qua HTTP — trình duyệt sẽ gắn nhãn "Không an toàn" trên thanh địa chỉ, mất niềm tin khách.`,
+        'Đổi src ảnh về https:// hoặc đường dẫn tương đối (/anh/pho.jpg); ảnh http chỉ là cảnh báo nhưng đủ khiến khách hoài nghi.');
+    }
+    return out('mixed_content', 'pass',
+      'Trang chạy HTTPS và không tải tài nguyên nào qua HTTP — thanh địa chỉ sạch, không bị trình duyệt cảnh báo.',
+      'Giữ nguyên: chèn tài nguyên mới nhớ dùng https://; rà lại sau khi thêm plugin/khung nhúng mới.');
+  }
+
+  function checkImgWh(doc) {
+    const imgs = Array.from(doc.querySelectorAll('img'));
+    if (!imgs.length) {
+      return out('img_wh', 'pass',
+        'Trang không dùng ảnh nào — không có ảnh để kiểm tra.',
+        'Khi chèn ảnh, khai báo cả width/height để trình duyệt giữ chỗ trước khi ảnh tải về.');
+    }
+    const missing = imgs.filter((im) => {
+      const w = im.getAttribute('width');
+      const h = im.getAttribute('height');
+      return !(w && h && /^\d+$/.test(w.trim()) && /^\d+$/.test(h.trim()));
+    }).length;
+    if (missing > 0) {
+      // v1.3: chấm tối đa warn — thiếu width/height không chắc gây CLS nếu CSS đã
+      // giữ chỗ (aspect-ratio, max-width); HTML tĩnh không đọc được CSS nên không kết luận fail.
+      return out('img_wh', 'warn',
+        `${missing}/${imgs.length} ảnh chưa khai báo width/height — trình duyệt không biết trước kích thước; nếu CSS chưa giữ chỗ thì bố cục sẽ nhảy khi ảnh tải về (CLS).`,
+        'Thêm width="…" height="…" theo kích thước gốc của ảnh vào thẻ <img>; với ảnh dùng CSS co giãn, giữ thuộc tính kèm max-width:100% trong CSS.');
+    }
+    return out('img_wh', 'pass',
+      `${imgs.length} ảnh đều khai báo width/height — trình duyệt giữ chỗ đúng, bố cục không nhảy khi ảnh tải về.`,
+      'Nhớ giữ cả với ảnh mới; đổi kích thước ảnh thật thì cập nhật lại hai số này.');
+  }
+
+  /* ── Kiểm tra mới v1.3: trải nghiệm & truy cập ─────────────────────────── */
+
+  const LANDMARK_TAGS = ['header', 'footer', 'main', 'nav', 'aside', 'article', 'section'];
+
+  function checkSemanticHtml(doc) {
+    const counts = {};
+    for (const t of LANDMARK_TAGS) {
+      const n = doc.querySelectorAll(t).length;
+      if (n) counts[t] = n;
+    }
+    const hasMain = !!counts.main;
+    const hasTop = counts.header || counts.nav || counts.footer;
+    if (hasMain && hasTop) {
+      return out('semantic_html', 'pass',
+        `Cấu trúc ngữ nghĩa tốt: có <main> cùng các thẻ ${Object.keys(counts).map((t) => `<${t}>`).join(', ')} — trình duyệt, công cụ quét và phần mềm đọc màn hình đều hiểu bố cục.`,
+        'Giữ lệ khi viết trang mới: mỗi trang 1 <main>, menu dùng <nav>, phần lặp dùng <article>/<section>.');
+    }
+    const n = Object.values(counts).reduce((s, x) => s + x, 0);
+    if (n > 0) {
+      return out('semantic_html', 'warn',
+        `Có một số thẻ ngữ nghĩa (${Object.keys(counts).map((t) => `<${t}>`).join(', ')}) nhưng thiếu cấu trúc chủ chốt` +
+        (hasMain ? '' : ' — chưa có <main> chốt vùng nội dung chính') +
+        (hasTop ? '' : ' — chưa có <header>/<nav>/<footer>') + '.',
+        'Gói lại: toàn bộ menu vào <nav>, nội dung chính vào <main>, logo/giới thiệu đầu trang vào <header>, thông tin liên hệ chân trang vào <footer>.');
+    }
+    return out('semantic_html', 'fail',
+      'Toàn trang dựng bằng thẻ trung tính (div/span) không có thẻ ngữ nghĩa nào — máy tìm kiếm và người dùng phần mềm đọc màn hình khó hiểu cấu trúc.',
+      'Dựng lại khung sườn: <header> (logo + menu <nav>), <main> chứa <h1> và nội dung chính, <footer> (địa chỉ + link chính sách).');
+  }
+
+  function isLabelled(el, doc) {
+    // label bọc ngoài (ancestor label) — linkedom không có closest nên đi tay
+    let p = el.parentElement;
+    for (let i = 0; i < 4 && p; i++) {
+      if ((p.tagName || '').toLowerCase() === 'label') return true;
+      p = p.parentElement;
+    }
+    if (el.getAttribute('aria-label')) return true;
+    const byL = el.getAttribute('aria-labelledby');
+    if (byL && byL.split(/\s+/).some((r) => doc.getElementById(r))) return true;
+    // label[for]
+    return false;
+  }
+
+  function checkFormLabels(doc) {
+    const mapFor = new Map();
+    for (const l of doc.querySelectorAll('label[for]')) {
+      const f = l.getAttribute('for');
+      if (f) mapFor.set(f.trim(), true);
+    }
+    const fields = Array.from(doc.querySelectorAll('input, textarea, select')).filter((el) => {
+      const t = (el.getAttribute('type') || '').toLowerCase();
+      return t !== 'hidden' && t !== 'submit' && t !== 'button' && t !== 'reset' && t !== 'image';
+    });
+    if (!fields.length) {
+      return out('form_labels', 'pass',
+        'Trang không có trường nhập liệu (trong HTML tĩnh) — không có gì để chấm.',
+        'Khi thêm form, mỗi trường đều gắn <label for>: khách không biết điền chỗ nào nếu thiếu nhãn.');
+    }
+    let missing = 0;
+    for (const el of fields) {
+      const id = el.getAttribute('id');
+      const ok = (id && mapFor.has(id)) || isLabelled(el, doc);
+      if (!ok) missing++;
+    }
+    if (missing === 0) {
+      return out('form_labels', 'pass',
+        `${fields.length} trường nhập đều có nhãn rõ ràng — khách biết từng ô điền gì, phần mềm đọc màn hình đọc đúng.`,
+        'Nhãn nên nằm ngoài ô (không dùng nhãn placeholder): khách điền xong vẫn còn thấy nhờ toad.');
+    }
+    const ratio = missing / fields.length;
+    if (ratio > 0.5) {
+      return out('form_labels', 'fail',
+        `${missing}/${fields.length} trường nhập không có nhãn (label/aria-label) — khách không biết ô nào điền cái gì, phần mềm đọc màn hình đọc lang bạt.`,
+        'Thêm <label for="id"> tương ứng từng trường; trường đặc biệt dùng aria-label; không nhờ placeholder thay nhãn — chữ này mất ngay khi gõ.');
+    }
+    return out('form_labels', 'warn',
+      `${missing}/${fields.length} trường nhập chưa có nhãn — một phần học khách (nhất là phần mềm đọc màn hình) sẽ bí khi điền.`,
+      'Kiểm tra từng ô thiếu: thêm <label for>, hoặc ít nhất aria-label mô tả đúng nội dung cần điền.');
+  }
+
+  function accessibleName(el, doc) {
+    const al = el.getAttribute('aria-label');
+    if (al && al.trim()) return al.trim();
+    const by = el.getAttribute('aria-labelledby');
+    if (by && by.split(/\s+/).some((r) => {
+      const t = doc.getElementById(r);
+      return t && t.textContent.trim();
+    })) return '(từ aria-labelledby)';
+    const title = el.getAttribute('title');
+    if ((el.tagName || '').toLowerCase() === 'input') {
+      const v = el.getAttribute('value');
+      if (v && v.trim()) return v.trim();
+    }
+    const img = el.querySelector && el.querySelector('img[alt]');
+    if (img && (img.getAttribute('alt') || '').trim()) return `[ảnh: ${img.getAttribute('alt').trim()}]`;
+    if (title && title.trim()) return title.trim();
+    const txt = (el.textContent || '').trim();
+    if (txt) return txt;
+    return null; // không có tên truy cập
+  }
+
+  function checkAccessibleNames(doc) {
+    const controls = [
+      ...Array.from(doc.querySelectorAll('a[href]')),
+      ...Array.from(doc.querySelectorAll('button')),
+      ...Array.from(doc.querySelectorAll('[role="button"]')),
+      ...Array.from(doc.querySelectorAll('input[type="submit" i], input[type="button" i]')),
+    ];
+    let missing = 0;
+    for (const el of controls) {
+      if (!accessibleName(el, doc)) missing++;
+    }
+    if (missing === 0) {
+      return out('accessible_names', 'pass',
+        `${controls.length} liên kết/nút bấm đều có tên truy cập (chữ hiển thị hoặc aria-label) — phần mềm đọc màn hình đọc đúng chức năng từng cái.`,
+        'Nút mới (chủ yếu là icon) nhớ aria-label: không có tên sẽ đóng vai trò rối cho khách dùng trợ năng.');
+    }
+    const level = missing > 2 ? 'fail' : 'warn';
+    const nĐọc = controls.length - missing;
+    return out('accessible_names', level,
+      `${missing}/${controls.length} nút bấm & liên kết không có tên truy cập (không chữ, không aria-label/title/ảnh alt)` +
+      (missing > 2 ? ' — số lượng lớn, khách dùng phần mềm đọc màn hình không thể dùng trang.' :
+        ' — số ít nhưng vẫn khiến một số nút "vô danh" với trợ năng.'),
+      'Với nút icon (chỉ hình ảnh), thêm aria-label ngắn gọn ("Tìm kiếm", "Giỏ hàng"); kiểm tra lại tab qua bàn phím thấy tên từng nút.');
+  }
+
+  function checkBlankLinks(doc) {
+    // Quét mọi <a> (cả thiếu href) — liên kết không href mà mở tab mới cũng cần rel.
+    const anchors = Array.from(doc.querySelectorAll('a'));
+    const blanks = anchors.filter((a) => (a.getAttribute('target') || '').toLowerCase() === '_blank');
+    if (!blanks.length) {
+      return out('blank_links', 'pass',
+        'Trang không mở link nào bằng tab mới (target="_blank") — không có rủi ro này.',
+        'Khi cần mở tab mới (link ngoài), nhớ thêm rel="noopener noreferrer".');
+    }
+    const bad = blanks.filter((a) => !/noopener|noreferrer/i.test(a.getAttribute('rel') || ''));
+    if (bad.length === 0) {
+      return out('blank_links', 'pass',
+        `Cả ${blanks.length} liên kết mở tab mới đều có rel bảo mật (noopener/noreferrer) — trang của bạn không bị tram vì trang bên kia.`,
+        'Giữ nguyên: rel="noopener noreferrer" là chuẩn với mọi target="_blank".');
+    }
+    const level = bad.length > 2 ? 'fail' : 'warn';
+    return out('blank_links', level,
+      `${bad.length}/${blanks.length} liên kết mở tab mới thiếu rel="noopener noreferrer" — tab mới có thể can thiệp vào tab cũ (đánh cắp phiên/ngoài trang lạ).`,
+      'Thêm rel="noopener noreferrer" vào từng <a target="_blank"> — sửa 1 dòng mỗi link, không rủi ro gì.');
+  }
+
   /* ── Kiểm tra cấp site (robots.txt, sitemap.xml) + liên kết ────────────── */
 
   // robots/sitemap là dữ liệu ngoài HTML trang: main.js fetch sẵn (qua chế độ ?soft=1)
@@ -516,8 +918,9 @@ const WebCheck = (function () {
     }
     let internal = 0;
     let external = 0;
-    let dead = 0;     // href="#" / javascript: / href hỏng
-    let emptyText = 0; // <a> trống chữ (kể cả khi bọc ảnh không alt)
+    let dead = 0;         // href="#" / javascript: / href hỏng
+    let deadFragment = 0; // href="#tên-anchor" mà id "tên-anchor" không tồn tại trên trang
+    let emptyText = 0;    // <a> trống chữ (kể cả khi bọc ảnh không alt)
     let baseOrigin = '';
     try { baseOrigin = new URL(meta.finalUrl || meta.inputUrl || '').origin; } catch { /* giữ '' */ }
     for (const a of anchors) {
@@ -527,7 +930,17 @@ const WebCheck = (function () {
       } else {
         try {
           const u = new URL(href, baseOrigin || undefined);
-          if (baseOrigin && u.origin === baseOrigin) internal++; else external++;
+          // Fragment nội bộ ("#ten-anchor") chỉ hợp lệ khi trang có id đó —
+          // bấm tới sẽ không cuộn đi đâu cả, coi như liên kết lỗi (phần v1.3 của mục 22.12/22.14).
+          const hash = u.hash; // dạng "#ten-anchor" hoặc ""
+          if (hash.length > 1 && baseOrigin && u.origin === baseOrigin
+              && !doc.getElementById(decodeURIComponent(hash.slice(1)))) {
+            deadFragment++;
+          } else if (baseOrigin && u.origin === baseOrigin) {
+            internal++;
+          } else {
+            external++;
+          }
         } catch { dead++; }
       }
       // Icon-link không chữ hiển thị nhưng có chữ cho trợ năng (aria-label/title)
@@ -535,10 +948,11 @@ const WebCheck = (function () {
       if (!a.textContent.trim() && !a.querySelector('img')
           && !a.getAttribute('aria-label') && !a.getAttribute('title')) emptyText++;
     }
-    const flawed = dead + emptyText;
+    const flawed = dead + deadFragment + emptyText;
     const count = `Trang có ${anchors.length} liên kết: ${internal} nội bộ, ${external} ngoài.`;
     const issues = [];
     if (dead) issues.push(`${dead} liên kết chết (href="#")`);
+    if (deadFragment) issues.push(`${deadFragment} anchor trỏ tới vị trí không tồn tại`);
     if (emptyText) issues.push(`${emptyText} liên kết không có chữ`);
     if (flawed === 0) {
       return out('links', 'pass',
@@ -547,8 +961,8 @@ const WebCheck = (function () {
     }
     if (flawed <= 5) {
       return out('links', 'warn',
-        `${count} Cần sửa: ${issues.join(' và ')} — khách bấm không thấy gì, máy quét đi vào ngõ cụt.`,
-        'Trỏ mỗi link chết sang trang thật hoặc xoá đi; liên kết bọc hình cần thêm chữ hoặc aria-label.');
+        `${count} Cần sửa: ${issues.join(' và ')} — khách bấm không thấy gì, máy quét đi vào ngõ cụt (liên kết anchor cần id khớp trên trang).`,
+        'Trỏ mỗi link chết sang trang thật hoặc xoá đi; liên kết anchor "#ten" cần đủ id="ten" đúng vị trí; liên kết bọc hình cần thêm chữ hoặc aria-label.');
     }
     return out('links', 'fail',
       `${count} Và ${flawed} liên kết lỗi (${issues.join(' và ')}) — số lượng quá lớn, có khả năng trang dính chữ nhúng/khung rác cần dọn.`,
@@ -584,13 +998,25 @@ const WebCheck = (function () {
       heading_system: checkHeadingSystem(doc, h1Count),
       links: checkLinks(doc, meta),
       analytics: checkAnalytics(html),
+      duplicate_ids: checkDuplicateIds(doc),
+      mixed_content: checkMixedContent(meta, doc),
       viewport: checkViewport(doc),
       img_alt: checkImages(doc),
+      img_wh: checkImgWh(doc),
       favicon: checkFavicon(doc),
       theme_color: checkThemeColor(doc),
       lazy_load: checkLazyLoad(doc),
       resources: checkResources(doc),
       page_weight: checkPageWeight(html),
+      cta: checkCTA(doc),
+      contact_info: checkContactInfo(doc),
+      contact_form: checkContactForm(doc),
+      social_links: checkSocialLinks(doc),
+      policy_links: checkPolicyLinks(doc),
+      semantic_html: checkSemanticHtml(doc),
+      form_labels: checkFormLabels(doc),
+      accessible_names: checkAccessibleNames(doc),
+      blank_links: checkBlankLinks(doc),
     };
 
     const checks = DEFS.map((d) => byId[d.id]);
@@ -607,28 +1033,79 @@ const WebCheck = (function () {
     };
   }
 
-  /* ── Hiển thị checklist tạm (đủ demo mốc 1; mốc 2 sẽ thay phần này) ─────── */
+  /* ── Chấm điểm v1.3 (mốc 2) — hàm thuần, test được độc lập DOM ─────────── */
+
+  // Công thức chốt (contract.md mục 3, v1.3):
+  //   pass = đủ weight · warn = weight/2 · fail = 0
+  //   unknown: loại khỏi CẢ tử lẫn mẫu số (chính nghĩa "không xác định" — không chấm oan).
+  //   tổng = round(earned / maxChấmĐược × 100, 1); điểm nhóm là quy mô con của cùng công thức.
+  function tinhDiem(result) {
+    const checks = (result && Array.isArray(result.checks)) ? result.checks : [];
+    const counts = { pass: 0, warn: 0, fail: 0, unknown: 0 };
+    let earned = 0;
+    let max = 0;                       // tổng weight của những mục CHẤM được (unknown bị loại)
+    const byGroup = new Map();         // group → { earned, max, weight (đầy đủ) }
+    for (const d of DEFS) {
+      if (!byGroup.has(d.group)) byGroup.set(d.group, { earned: 0, max: 0, weight: 0 });
+    }
+    for (const c of checks) {
+      const w = Number(c.weight) || 0;
+      const g = byGroup.get(c.group) || { earned: 0, max: 0, weight: 0 };
+      counts[c.level] = (counts[c.level] || 0) + 1;
+      g.weight += w;
+      if (c.level === 'unknown') {
+        byGroup.set(c.group, g);
+        continue;                      // unknown: không điểm, không vào mẫu số
+      }
+      const diem = c.level === 'pass' ? w : (c.level === 'warn' ? w / 2 : 0);
+      earned += diem;
+      max += w;
+      g.earned += diem;
+      g.max += w;
+      byGroup.set(c.group, g);
+    }
+    const gList = [...byGroup.entries()].map(([name, v]) => ({ name, earned: v.earned, max: v.max, weight: v.weight }));
+    const mauSo = max;
+    const total = max > 0 ? Math.round(Math.min(earned / max, 1) * 1000) / 10 : 0;
+    const capDo = total >= 90 ? 'Tốt' : total >= 75 ? 'Khá' : total >= 60 ? 'Trung bình' : total >= 40 ? 'Yếu' : 'Rất yếu';
+    return { total, capDo, earned, max, mauSo, groups: gList, counts };
+  }
+
+  // "3,5" — đồng nhất tiếng Việt: dấu phẩy thập phân; unknown → "—"
+  function fmt(n) {
+    if (n == null) return '—';
+    return (Math.round(n * 10) / 10).toString().replace('.', ',');
+  }
+
+  /* ── Hiển thị checklist v1.3: nhóm dạng <details> thu gọn/mở được ───────── */
 
   function renderChecklist(result, mount) {
     mount.textContent = '';
     const buckets = Object.fromEntries(GROUPS.map((g) => [g, []]));
     for (const c of result.checks) if (buckets[c.group]) buckets[c.group].push(c);
+    const sc = tinhDiem(result);
 
     for (const g of GROUPS) {
       const list = buckets[g];
       if (!list.length) continue;
       const owner = mount.ownerDocument || document;
-      const section = owner.createElement('section');
-      section.className = 'check-group';
+      const details = owner.createElement('details');
+      details.className = 'check-group';
 
+      const summary = owner.createElement('summary');
       const h = owner.createElement('h2');
       h.textContent = g;
+      const grp = sc.groups.find((x) => x.name === g);
       const achieved = list.filter((c) => c.level === 'pass').length;
       const sum = owner.createElement('span');
       sum.className = 'group-sum';
-      sum.textContent = `${achieved}/${list.length} đạt`;
+      // V1.3: nhóm có unknown trả "0/n đạt (chưa chấm được)" — minh bạch thay vì ẩn.
+      sum.textContent = grp && grp.max > 0
+        ? `${fmt(grp.earned)}/${fmt(grp.max)} điểm · ${achieved}/${list.length} đạt`
+        : `0/${list.length} đạt (chưa chấm được)`;
       h.appendChild(sum);
-      section.appendChild(h);
+      summary.appendChild(h);
+      details.appendChild(summary);
 
       const rows = owner.createElement('div');
       rows.className = 'check-rows';
@@ -660,10 +1137,19 @@ const WebCheck = (function () {
           body.appendChild(sug);
         }
         row.appendChild(body);
+
+        // Chip điểm từng mục "đạt được/tối đa": fail = "0/w", riêng unknown không chấm → "—/w".
+        const diem = c.level === 'pass' ? c.weight : c.level === 'warn' ? c.weight / 2 : c.level === 'fail' ? 0 : null;
+        const pts = owner.createElement('span');
+        pts.className = 'check-pts mono';
+        pts.setAttribute('data-level', c.level);
+        pts.textContent = `${fmt(diem)}/${c.weight}`;
+        row.appendChild(pts);
+
         rows.appendChild(row);
       }
-      section.appendChild(rows);
-      mount.appendChild(section);
+      details.appendChild(rows);
+      mount.appendChild(details);
     }
   }
 
@@ -692,13 +1178,21 @@ const WebCheck = (function () {
 <img src="qua-tang.jpg">
 <img src="doi-thong.jpg" alt="Đồi thông phía sau quán" loading="lazy">
 <img src="noi-that.jpg" alt="Nội thất gỗ trong quán" loading="lazy">
+<form action="/gui-lien-he" method="post">
+  <input type="email" name="email" aria-label="Email nhận khuyến mãi" placeholder="Email">
+  <input type="text" name="ho-ten" placeholder="Họ tên">
+  <button type="submit">Gửi thông tin</button>
+</form>
 <script src="/jquery.min.js"></script><script src="/slider.js"></script><script src="/ban-do.js"></script>
 <script src="/chat.js"></script><script src="/form.js"></script>
 <link rel="stylesheet" href="/main.css"><link rel="stylesheet" href="/slider.css"><link rel="stylesheet" href="/shop.css">
 <footer>
-<a href="#">Xem menu</a>
-<a href="/dat-ban">Đặt bàn</a>
-<a href="https://facebook.com/quanmoc">Facebook của quán</a>
+<a href="#" class="menu-link">Xem menu</a>
+<a href="/dat-ban" class="btn-main">Đặt bàn ngay</a>
+<a href="tel:0917000111">Gọi quán: 0917 000 111</a>
+<a href="mailto:info@quan-moc-da-lat.vn">Email quán</a>
+<a href="https://facebook.com/quanmoc">Fanpage Facebook của quán</a>
+<a href="/chinh-sach-bao-mat">Chính sách bảo mật</a>
 </footer>
 </body>
 </html>`;
@@ -709,8 +1203,9 @@ const WebCheck = (function () {
     statusCode: 200,
     elapsedMs: 1240,
     robots: {
-      statusCode: 200,
-      text: 'User-agent: *\nDisallow: /admin/\n\nSitemap: https://quan-moc-da-lat.vn/sitemap.xml\n',
+      // 403: site chặn bot quét — đúng theo hợp đồng phải chấm unknown (không dối là fail).
+      statusCode: 403,
+      text: '',
     },
     sitemap: {
       statusCode: 200,
@@ -740,7 +1235,7 @@ const WebCheck = (function () {
     return null;
   }
 
-  return { runChecks, renderChecklist, demoResult, docKetQua, DEFS, VERSION };
+  return { runChecks, renderChecklist, demoResult, docKetQua, tinhDiem, DEFS, VERSION };
 })();
 
 if (typeof window !== 'undefined') window.WebCheck = WebCheck;

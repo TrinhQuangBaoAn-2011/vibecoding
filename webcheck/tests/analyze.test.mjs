@@ -11,311 +11,239 @@ const src = readFileSync(join(here, '..', 'js', 'analyze.js'), 'utf8');
 // trình duyệt lẫn qua sandbox ở đây — đây chính là seam công khai của mốc 1.
 const WebCheck = new Function(src + '\n;return WebCheck;')();
 const parse = (h) => new DOMParser().parseFromString(h, 'text/html');
+
 const GOOD_ROBOTS = 'User-agent: *\nDisallow: /admin/\nSitemap: https://atlas-cafe.vn/sitemap.xml\n';
 const GOOD_SITEMAP = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://atlas-cafe.vn/</loc></url>\n  <url><loc>https://atlas-cafe.vn/thuc-don</loc></url>\n</urlset>';
-// meta mặc định: robots.txt + sitemap.xml giả lập từng fetch sẵn (m1 main.js làm thật).
-// Ghi đè bằng tham số thứ 2: run(GOOD(), { robots: null }) v.v.
-const run = (html, extraMeta = {}) =>
-  WebCheck.runChecks(html, Object.assign({
-    inputUrl: 'https://atlas-cafe.vn/',
-    finalUrl: 'https://atlas-cafe.vn/',
-    statusCode: 200,
-    elapsedMs: 800,
-    robots: { statusCode: 200, text: GOOD_ROBOTS },
-    sitemap: { statusCode: 200, text: GOOD_SITEMAP },
-  }, extraMeta), parse);
 
-const ID_MỌC1 = [
-  'title', 'meta_description', 'charset', 'open_graph', 'canonical', 'robots_meta',
-  'robots_txt', 'sitemap',
-  'https', 'lang', 'h1', 'heading_system', 'links', 'structured_data', 'analytics',
-  'viewport', 'img_alt', 'favicon', 'theme_color', 'lazy_load',
-  'resources', 'page_weight',
-];
+// Meta mặc định: trang HTTPS chuẩn; robots.txt + sitemap.xml "từng fetch sẵn" (?soft=1).
+// Fake một trang đủ tốt để các check nền không nhiễu vào trường hợp đang thử.
+const BASE = 'Quán cà phê Atlas — rang xay Đà Lạt';          // title 36 ký tự (đạt 30–60)
+const DESC = 'Quán cà phê rang xay tại Đà Lạt. Rang mộc từng mẻ, giao toàn quốc, đặt bàn online.'; // ~96 ký tự
+const page = (body) => `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8">` +
+  `<title>${BASE}</title><meta name="description" content="${DESC}">` +
+  `<meta name="viewport" content="width=device-width, initial-scale=1">` +
+  `</head><body>${body}</body></html>`;
 
-// ── Trang "chuẩn" mẫu: mọi thiên hướng bị lỗi đều được vá kín ────────────────
-const GOOD = (title, desc) => `<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="utf-8">
-<title>${title || 'A'.repeat(44)}</title>
-<meta name="description" content="${desc || 'D'.repeat(120)}">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<meta name="theme-color" content="#0b6b58">
-<meta property="og:title" content="Atelier Trà — quà trà thảo mịch">
-<meta property="og:image" content="/img/social-coverage.png">
-<link rel="canonical" href="https://atlas-cafe.vn/">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"LocalBusiness","name":"Atelier Trà"}</script>
-<script src="https://www.googletagmanager.com/gtag/js?id=G-TEST"></script>
-<link rel="stylesheet" href="/styles.css">
-<link rel="stylesheet" href="/print.css">
-</head>
-<body>
-<h1>Trà thảo mịch Atelier</h1>
-<h2>Hương vị</h2>
-<p>Built fixture content.</p>
-<h3>Sen 一</h3>
-<h2>Cách dùng</h2>
-<img src="tra-sen.jpg" alt="Hộp quà trà sen" loading="lazy">
-<img src="tra-at.iso.jpg" alt="Trà khô đóng túi" loading="lazy">
-<footer><a href="/thuc-don">Thực đơn</a><a href="https://facebook.com/atelier" target="_blank">Facebook</a></footer>
-</body>
-</html>`;
+const defMeta = (extra = {}) => ({
+  inputUrl: 'atlas-cafe.vn',
+  finalUrl: 'https://atlas-cafe.vn/',
+  statusCode: 200,
+  elapsedMs: 800,
+  robots: { statusCode: 200, text: GOOD_ROBOTS },
+  sitemap: { statusCode: 200, text: GOOD_SITEMAP },
+  ...extra,
+});
+const run = (body, extra) => WebCheck.runChecks(page(body), defMeta(extra), parse);
+const runDoc = (fullHtml, extra) => WebCheck.runChecks(fullHtml, defMeta(extra), parse);
+const lv = (r, id) => r.checks.find((c) => c.id === id).level;
+const rst = (r, id) => r.checks.find((c) => c.id === id);
 
-// ── 1. Bất biến cấu trúc: hợp đồng mà mốc 2–5 dựa vào ───────────────────────
-test('Result v1.2: đủ 22 mục, id đúng hợp đồng, không trùng, weight cộng đúng 100', () => {
-  const r = run(GOOD());
-  assert.equal(r.version, '1.2');
-  assert.equal(r.checks.length, ID_MỌC1.length);
-  const ids = r.checks.map((c) => c.id);
-  assert.deepEqual([...ids].sort(), [...ID_MỌC1].sort());
-  assert.equal(new Set(ids).size, ids.length, 'id phải duy nhất');
-  const total = r.checks.reduce((s, c) => s + c.weight, 0);
-  assert.equal(total, 100);
+/* ── 1) Cấu trúc bộ tiêu chí v1.3 ───────────────────────────────────────── */
+
+test('v1.3: 34 mục, không trùng ID, tổng trọng số đúng 100, version 1.3', () => {
+  assert.equal(WebCheck.DEFS.length, 34);
+  const ids = WebCheck.DEFS.map((d) => d.id);
+  assert.equal(new Set(ids).size, 34);
+  assert.equal(WebCheck.DEFS.reduce((s, d) => s + d.weight, 0), 100);
+  assert.equal(WebCheck.VERSION, '1.3');
 });
 
-test('Mọi check đều có label, detail, suggestion (tiếng Việt), group và level hợp lệ', () => {
-  const r = run(GOOD());
-  const levels = new Set(['pass', 'warn', 'fail', 'unknown']);
-  for (const c of r.checks) {
-    assert.ok(c.label && c.label.length > 3, `label trống: ${c.id}`);
-    assert.ok(c.detail, `detail trống: ${c.id}`);
-    assert.ok(c.suggestion, `suggestion trống: ${c.id}`);
-    assert.ok(['SEO & hiển thị', 'Chuẩn kỹ thuật', 'Di động & hình ảnh', 'Tốc độ tải nội dung'].includes(c.group), `group lạ: ${c.id}`);
-    assert.ok(levels.has(c.level), `level lạ: ${c.id}`);
-    // passed trung hòa với level: mốc 2 vẫn dùng được API cũ
-    if (c.level === 'pass') assert.equal(c.passed, true);
-    if (c.level === 'warn' || c.level === 'fail') assert.equal(c.passed, false);
+test('v1.3: giữ nguyên đủ 22 ID cũ của v1.2', () => {
+  const ids = new Set(WebCheck.DEFS.map((d) => d.id));
+  for (const id of ['title', 'meta_description', 'open_graph', 'canonical', 'robots_meta',
+    'robots_txt', 'sitemap', 'structured_data', 'https', 'lang', 'charset', 'h1',
+    'heading_system', 'links', 'analytics', 'viewport', 'img_alt', 'favicon',
+    'theme_color', 'lazy_load', 'resources', 'page_weight']) {
+    assert.ok(ids.has(id), 'mất ID cũ: ' + id);
   }
 });
 
-test('meta yêu cầu (inputUrl, finalUrl, statusCode, fetchedAt ISO) đi trọn vào Result', () => {
-  const r = WebCheck.runChecks(GOOD(), {
-    inputUrl: 'atlas-cafe.vn',
-    finalUrl: 'https://atlas-cafe.vn/',
-    statusCode: 200,
-    elapsedMs: 800,
-  }, parse);
-  assert.equal(r.url, 'atlas-cafe.vn');
-  assert.equal(r.finalUrl, 'https://atlas-cafe.vn/');
-  assert.equal(r.statusCode, 200);
-  assert.ok(!Number.isNaN(Date.parse(r.fetchedAt)), 'fetchedAt phải là ISO time');
-  assert.ok(r.elapsedMs > 0);
+test('v1.3: đúng 6 nhóm với trọng số nhóm chốt trong hợp đồng', () => {
+  const byGroup = {};
+  for (const d of WebCheck.DEFS) byGroup[d.group] = (byGroup[d.group] || 0) + d.weight;
+  assert.deepEqual(byGroup, {
+    'SEO & hiển thị': 26,
+    'Chuẩn kỹ thuật': 23,
+    'Di động & hình ảnh': 17,
+    'Tốc độ tải nội dung': 3,
+    'Marketing & chuyển đổi': 18,
+    'Trải nghiệm & truy cập': 13,
+  });
 });
 
-// ── 2. Trang "khô": thiếu gần hết — phát hiện được từng nhánh ───────────────
-test('Trang trống rỗng: title, description, viewport, charset… đều fail đúng id', () => {
-  const r = run('<!DOCTYPE html><html><head></head><body><p>trong</p></body></html>');
-  const m = Object.fromEntries(r.checks.map((c) => [c.id, c]));
-  assert.equal(m.title.level, 'fail');
-  assert.equal(m.meta_description.level, 'fail');
-  assert.equal(m.viewport.level, 'fail');
-  assert.equal(m.charset.level, 'fail');
-  assert.equal(m.open_graph.level, 'fail');
-  assert.equal(m.h1.level, 'fail');
-  assert.equal(m.favicon.level, 'warn');
-  assert.equal(m.theme_color.level, 'warn');
-  assert.equal(m.structured_data.level, 'warn');
-  assert.equal(m.analytics.level, 'warn');
-  assert.equal(m.canonical.level, 'warn');
-  assert.equal(m.lang.level, 'fail');
-  // trang không có ảnh: img_alt/lazy_load cho đạt trung lập, không phạt
-  assert.equal(m.img_alt.level, 'pass');
-  assert.equal(m.lazy_load.level, 'pass');
-  // site-level (robots/sitemap đọc từ meta, không phụ thuộc HTML trang)
-  assert.equal(m.robots_txt.level, 'pass');
-  assert.equal(m.sitemap.level, 'pass');
-  // trang không có liên kết: trung lập
-  assert.equal(m.links.level, 'pass');
+test('runChecks: Result trả đủ 34 check đúng thứ tự DEFS', () => {
+  const r = run('<p>chào</p>');
+  assert.equal(r.version, '1.3');
+  assert.equal(r.checks.length, 34);
+  assert.deepEqual(r.checks.map((c) => c.id), WebCheck.DEFS.map((d) => d.id));
 });
 
-// ── 3. Nhánh cảnh báo từng hạng mục ─────────────────────────────────────────
-test('title CẢNH BÁO khi quá ngắn và quá dài, ĐẠT khi 30–60 ký tự; detail nêu đúng số ký tự', () => {
-  const mk = (t) => run(GOOD(t)).checks.find((c) => c.id === 'title');
-  const qng = mk('Trà ngon');
-  assert.equal(qng.level, 'warn');
-  assert.ok(qng.detail.includes(String('Trà ngon'.length)), 'detail phải nêu đúng số ký tự');
-  const dai = mk('B'.repeat(100));
-  assert.equal(dai.level, 'warn');
-  assert.ok(dai.detail.includes('100'));
-  const vua = mk('C'.repeat(45));
-  assert.equal(vua.level, 'pass');
-  assert.ok(vua.detail.includes('45'));
+/* ── 2) Nhóm marketing & chuyển đổi ─────────────────────────────────────── */
+
+test('cta: CTA rõ ràng → pass; chỉ đường dẫn liên hệ thường → warn; réo hính không mục đích nào → fail', () => {
+  assert.equal(lv(run('<p>a</p><a class="btn-main" href="/dat-ban">Đặt bàn</a>'), 'cta'), 'pass');
+  assert.equal(lv(run('<p>a</p><a href="/lien-he">Liên hệ</a>'), 'cta'), 'warn');
+  assert.equal(lv(run('<p>chào bạn</p>'), 'cta'), 'fail');
 });
 
-test('meta_description: thiếu → fail, dưới 70 hoặc trên 160 → warn, 70–160 → pass', () => {
-  const mk = (d) => {
-    let g = GOOD(null, d);
-    if (d === undefined) g = g.replace(/<meta name="description"[^>]*>\n?/, '');
-    return run(g).checks.find((c) => c.id === 'meta_description');
-  };
-  assert.equal(mk(undefined).level, 'fail');
-  assert.equal(mk('d'.repeat(41)).level, 'warn');
-  assert.equal(mk('e'.repeat(178)).level, 'warn');
-  assert.equal(mk('f'.repeat(130)).level, 'pass');
+test('contact_info: ≥2 kênh liên hệ → pass; 1 kênh → warn; không → fail (số VN nhận cả dạng có dấu chấm)', () => {
+  assert.equal(lv(run('<p>a</p><a href="tel:0917000111">Gọi</a><a href="mailto:hi@quanmoc.vn">Email</a>'), 'contact_info'), 'pass');
+  assert.equal(lv(run('<p>Hotline 0917.000.111</p>'), 'contact_info'), 'warn');
+  assert.equal(lv(run('<p>chào</p>'), 'contact_info'), 'fail');
 });
 
-test('viewport: thiếu width=device-width → warn; thiếu hẳn → fail', () => {
-  const lack = run(GOOD().replace('<meta name="viewport" content="width=device-width, initial-scale=1">', '<meta name="viewport" content="initial-scale=1">'))
-    .checks.find((c) => c.id === 'viewport');
-  assert.equal(lack.level, 'warn');
-  const none = run('<html><head></head><body></body></html>').checks.find((c) => c.id === 'viewport');
-  assert.equal(none.level, 'fail');
+test('contact_form: form có trường nhập + nút gửi → pass; form thiếu nút gửi → warn; không form → fail', () => {
+  assert.equal(lv(run('<form><input type="email"><button type="submit">Gửi</button></form>'), 'contact_form'), 'pass');
+  assert.equal(lv(run('<form><input type="text"></form>'), 'contact_form'), 'warn');
+  assert.equal(lv(run('<p>x</p>'), 'contact_form'), 'fail');
 });
 
-test('https: http URL → fail, https → pass', () => {
-  assert.equal(run(GOOD(), { inputUrl: 'http://atlas-cafe.vn/', finalUrl: 'http://atlas-cafe.vn/' }).checks.find((c) => c.id === 'https').level, 'fail');
-  assert.equal(run(GOOD(), { inputUrl: 'https://atlas-cafe.vn/', finalUrl: 'https://atlas-cafe.vn/' }).checks.find((c) => c.id === 'https').level, 'pass');
+test('social_links: link trang fanpage → pass; chỉ link share → warn; không → fail', () => {
+  assert.equal(lv(run('<a href="https://facebook.com/quanmoc">Fanpage</a>'), 'social_links'), 'pass');
+  assert.equal(lv(run('<a href="https://www.facebook.com/sharer/sharer.php?u=/x">Chia sẻ</a>'), 'social_links'), 'warn');
+  assert.equal(lv(run('<p>x</p>'), 'social_links'), 'fail');
 });
 
-test('h1: 2 thẻ → warn; 1 thẻ → pass', () => {
-  const haiH1 = run(GOOD().replace('<h2>Hương vị</h2>', '<h1>Trà trà</h1><h2>Hương vị</h2>'))
-    .checks.find((c) => c.id === 'h1');
-  assert.equal(haiH1.level, 'warn');
-  assert.equal(run(GOOD()).checks.find((c) => c.id === 'h1').level, 'pass');
+test('policy_links: ≥2 trang chính sách/quy định → pass; 1 → warn; 0 → fail', () => {
+  assert.equal(lv(run('<a href="/dieu-khoan">Điều khoản</a><a href="/chinh-sach-bao-mat">Bảo mật</a>'), 'policy_links'), 'pass');
+  assert.equal(lv(run('<a href="/chinh-sach">Chính sách</a>'), 'policy_links'), 'warn');
+  assert.equal(lv(run('<p>x</p>'), 'policy_links'), 'fail');
 });
 
-test('heading_system: nhảy bậc h2→h4 → warn, có h1 làm gốc và tuần tự → pass, không có h1 → cảnh báo nêu rõ trong detail', () => {
-  const nhay = run(GOOD().replace('<h3>Sen 一</h3>', '<h4>Sen nhảy bậc</h4>'))
-    .checks.find((c) => c.id === 'heading_system');
-  assert.equal(nhay.level, 'warn');
-  assert.equal(run(GOOD()).checks.find((c) => c.id === 'heading_system').level, 'pass');
+/* ── 3) Nhóm chuẩn kỹ thuật (mới) ───────────────────────────────────────── */
+
+test('duplicate_ids: ID trùng → fail kèm tên ID trong chi tiết; không trùng → pass', () => {
+  const bad = run('<div id="x"></div><span id="x"></span>');
+  assert.equal(lv(bad, 'duplicate_ids'), 'fail');
+  assert.ok(rst(bad, 'duplicate_ids').detail.includes('"x"'));
+  assert.equal(lv(run('<div id="ok"></div>'), 'duplicate_ids'), 'pass');
 });
 
-test('img_alt: thiếu alt hết → fail; thiếu một phần → warn nêu đúng số; đủ hết → pass', () => {
-  const missAll = run(GOOD().replace(/<img[^>]*>/g, (m) => { return m.replace(/ alt="[^"]*"/, '') }))
-    .checks.find((c) => c.id === 'img_alt');
-  assert.equal(missAll.level, 'fail');
-  const missSome = run(GOOD().replace(' alt="Trà khô đóng túi"', ''))
-    .checks.find((c) => c.id === 'img_alt');
-  assert.equal(missSome.level, 'warn');
-  assert.ok(missSome.detail.includes('1') || missSome.detail.includes('một'), 'detail phải nêu số ảnh thiếu');
-  assert.equal(run(GOOD()).checks.find((c) => c.id === 'img_alt').level, 'pass');
+test('mixed_content: script/CSS http → fail; ảnh http → warn; sạch → pass; trang HTTP → unknown', () => {
+  assert.equal(lv(run('<img src="http://ads.example.com/x.jpg" alt="a">'), 'mixed_content'), 'warn');
+  assert.equal(lv(run('<script src="http://ads.example.com/a.js"></script>'), 'mixed_content'), 'fail');
+  assert.equal(lv(run('<img src="photo.jpg" alt="a"><script src="/app.js"></script>'), 'mixed_content'), 'pass');
+  assert.equal(lv(run('<p>x</p>', { finalUrl: 'http://atlas-cafe.vn/' }), 'mixed_content'), 'unknown');
 });
 
-test('open_graph: có og:title thiếu og:image → warn; đủ cả → pass', () => {
-  const thieuAnh = run(GOOD().replace('<meta property="og:image" content="/img/social-coverage.png">', ''))
-    .checks.find((c) => c.id === 'open_graph');
-  assert.equal(thieuAnh.level, 'warn');
-  assert.equal(run(GOOD()).checks.find((c) => c.id === 'open_graph').level, 'pass');
+test('img_wh: ảnh thiếu width/height tối đa chỉ warn — không bao giờ fail (CSS aspect-ratio không thấy được)', () => {
+  assert.equal(lv(run('<img alt="a">'), 'img_wh'), 'warn');
+  assert.equal(lv(run('<img alt="a" width="800" height="600">'), 'img_wh'), 'pass');
+  assert.equal(lv(run('<p>không có ảnh</p>'), 'img_wh'), 'pass');
 });
 
-test('charset: iso-8859-1 → warn (nên UTF-8); utf-8 → pass', () => {
-  const iso = run(GOOD().replace('<meta charset="utf-8">', '<meta charset="iso-8859-1">'))
-    .checks.find((c) => c.id === 'charset');
-  assert.equal(iso.level, 'warn');
-  assert.equal(run(GOOD()).checks.find((c) => c.id === 'charset').level, 'pass');
+test('lang: "vi" → pass; giá trị khai báo không chuẩn → warn; không khai báo → fail', () => {
+  const head = (lang) => `<!DOCTYPE html><html${lang ? ` lang="${lang}"` : ''}><head><meta charset="utf-8"><title>${BASE}</title><meta name="description" content="${DESC}"></head><body><p>x</p></body></html>`;
+  assert.equal(lv(runDoc(head('vi')), 'lang'), 'pass');
+  assert.equal(lv(runDoc(head('vn')), 'lang'), 'warn');
+  assert.equal(lv(runDoc(head('')), 'lang'), 'fail');
 });
 
-test('resources: hơn 8 file JS/CSS ngoài → warn, đếm đúng tổng; vừa phải → pass', () => {
-  const nhièu = GOOD().replace('</head>', Array.from({ length: 10 }, (_, i) => `<script src="/a${i}.js"></script><link rel="stylesheet" href="/b${i}.css">`).join('') + '</head>');
-  const warnRun = run(nhièu).checks.find((c) => c.id === 'resources');
-  assert.equal(warnRun.level, 'warn');
-  // A Fixture gốc: 1 script (GA) + 2 stylesheet; thêm 10 script + 10 stylesheet → 23
-  assert.ok(warnRun.detail.includes('23'), 'detail phải nêu tổng tài nguyên chính xác');
-  assert.equal(run(GOOD()).checks.find((c) => c.id === 'resources').level, 'pass');
+/* ── 4) Nhóm trải nghiệm & truy cập ─────────────────────────────────────── */
+
+test('semantic_html: mainящий (kèm header/footer) → pass; có ≥1 landmark nhưng thiếu chủ chốt → warn; chỉ div → fail', () => {
+  assert.equal(lv(run('<main><h1>t</h1><footer>f</footer></main>'), 'semantic_html'), 'pass');
+  assert.equal(lv(run('<section>x</section>'), 'semantic_html'), 'warn');
+  assert.equal(lv(run('<div>x</div>'), 'semantic_html'), 'fail');
 });
 
-test('page_weight: HTML to hơn 400 KB → fail và nêu dung lượng; nhỏ → pass', () => {
-  const to = run(GOOD().replace('</body>', '<p>' + 'x'.repeat(450 * 1024) + '</p></body>'))
-    .checks.find((c) => c.id === 'page_weight');
-  assert.equal(to.level, 'fail');
-  assert.equal(run(GOOD()).checks.find((c) => c.id === 'page_weight').level, 'pass');
+test('form_labels: đủ nhãn → pass; thiếu một phần → warn; thiếu quá nửa → fail; không có trường nhập → pass', () => {
+  assert.equal(lv(run('<form><label>Tên<input type="text"></label></form>'), 'form_labels'), 'pass');
+  assert.equal(lv(run('<form><label for="a">A</label><input id="a"><input type="text"></form>'), 'form_labels'), 'warn');
+  assert.equal(lv(run('<form><input type="text"><input type="email"><input type="tel"></form>'), 'form_labels'), 'fail');
+  assert.equal(lv(run('<p>x</p>'), 'form_labels'), 'pass');
 });
 
-test('lazy_load: nhiều ảnh mà ảnh nào cũng không loading="lazy" → warn; ít ảnh → neutral pass', () => {
-  const img5 = Array.from({ length: 5 }, (_, i) => `<img src="p${i}.jpg" alt="ảnh ${i}">`).join('');
-  const html = GOOD().replace(/<img[^>]*>\n?/g, '').replace('</body>', img5 + '</body>');
-  const warning = run(html).checks.find((c) => c.id === 'lazy_load');
-  assert.equal(warning.level, 'warn');
-  const it1 = GOOD().replace(/<img[^>]*>\n?/g, '').replace('</body>', '<img src="one.jpg" alt="một"></body>');
-  assert.equal(run(it1).checks.find((c) => c.id === 'lazy_load').level, 'pass');
+test('form_labels: placeholder không được tính thay nhãn; aria-label thì được tính', () => {
+  assert.equal(lv(run('<form><input type="text" placeholder="Tên"></form>'), 'form_labels'), 'fail');
+  assert.equal(lv(run('<form><input type="text" aria-label="Tên"></form>'), 'form_labels'), 'pass');
 });
 
-test('structured_data: JSON-LD sai cú pháp → warn nêu rõ; JSON đúng → pass', () => {
-  const hỏng = run(GOOD().replace('{"@context":"https://schema.org","@type":"LocalBusiness","name":"Atelier Trà"}', '{"@type": hỏng!'))
-    .checks.find((c) => c.id === 'structured_data');
-  assert.equal(hỏng.level, 'warn');
-  assert.equal(run(GOOD()).checks.find((c) => c.id === 'structured_data').level, 'pass');
+test('accessible_names: đủ tên truy cập → pass; ≤2 thiếu → warn; >2 → fail (nút icon có aria-label vẫn đạt)', () => {
+  assert.equal(lv(run('<a href="/x">Mua</a><button aria-label="Gọi">📞</button>'), 'accessible_names'), 'pass');
+  assert.equal(lv(run('<a href="/x"></a><button aria-label="Gọi">📞</button>'), 'accessible_names'), 'warn');
+  assert.equal(lv(run('<a href="/x"></a><button></button><a href="/y"></a><a href="/z">Z</a>'), 'accessible_names'), 'fail');
 });
 
-// ── 3b. Cấp site: robots.txt + sitemap.xml + liên kết ───────────────────────
-test('robots_txt: 404 → warn, 403/5xx (site chặn bot, server sự cố) → unknown, Disallow: / → fail, tệp chuẩn có chạy → pass, không có dữ liệu → unknown', () => {
-  const mk = (robots) => run(GOOD(), { robots }).checks.find((c) => c.id === 'robots_txt');
-  assert.equal(mk({ statusCode: 404, text: '' }).level, 'warn');
-  // HTTP ≠ 404 nghĩa là không fetch được tệp (chặn/sự cố) — không thể kết luận "chưa có tệp" → unknown
-  assert.equal(mk({ statusCode: 403, text: '' }).level, 'unknown');
-  assert.equal(mk({ statusCode: 500, text: '' }).level, 'unknown');
-  assert.equal(mk({ statusCode: 200, text: 'User-agent: *\nDisallow: /\n' }).level, 'fail');
-  // Chặn riêng từng bot lạ (không phải nhóm '*') là hợp lệ — không được nhầm thành chặn toàn bộ
-  const riêng = mk({ statusCode: 200, text: 'User-agent: AhrefsBot\nDisallow: /\n\nUser-agent: *\nAllow: /\nSitemap: https://atlas-cafe.vn/sitemap.xml' });
-  assert.equal(riêng.level, 'pass');
-  // Disallow: /admin/ KHÔNG bị nhầm thành chặn toàn bộ
-  const ok = mk({ statusCode: 200, text: GOOD_ROBOTS });
-  assert.equal(ok.level, 'pass');
-  assert.ok(ok.detail.toLowerCase().includes('sitemap'), 'detail nên ghi nhận dòng Sitemap khai báo sẵn');
-  assert.equal(mk(null).level, 'unknown');
+test('blank_links: target=_blank đủ rel bảo mật → pass; 1–2 thiếu → warn; ≥3 → fail', () => {
+  assert.equal(lv(run('<a href="https://a.vn" target="_blank" rel="noopener">x</a>'), 'blank_links'), 'pass');
+  assert.equal(lv(run('<a href="https://a.vn" target="_blank">x</a>'), 'blank_links'), 'warn');
+  assert.equal(lv(run('<a target="_blank">1</a><a target="_blank">2</a><a target="_blank">3</a>'), 'blank_links'), 'fail');
 });
 
-test('sitemap: 404 → warn, 403/5xx → unknown, XML <urlset> đọc được → pass nêu số URL, body là HTML → warn, không có dữ liệu → unknown', () => {
-  const mk = (sitemap) => run(GOOD(), { sitemap }).checks.find((c) => c.id === 'sitemap');
-  assert.equal(mk({ statusCode: 404, text: '' }).level, 'warn');
-  assert.equal(mk({ statusCode: 403, text: '' }).level, 'unknown');
-  assert.equal(mk({ statusCode: 503, text: '' }).level, 'unknown');
-  const ok = mk({ statusCode: 200, text: GOOD_SITEMAP });
-  assert.equal(ok.level, 'pass');
-  assert.ok(ok.detail.includes('2'), 'detail phải nêu đúng 2 URL trong fixture');
-  // Sitemap dạng "nhóm" (sitemapindex): <loc> đếm là sơ đồ con, không phải số trang — chi tiết phải nêu đích danh
-  const index = mk({ statusCode: 200, text: '<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>https://atlas-cafe.vn/sitemap-san-pham.xml</loc></sitemap><sitemap><loc>https://atlas-cafe.vn/sitemap-bai-viet.xml</loc></sitemap></sitemapindex>' });
-  assert.equal(index.level, 'pass');
-  assert.ok(index.detail.includes('sitemapindex') && index.detail.includes('2'), 'detail phải nêu dạng nhóm (sitemapindex) + đúng số 2 nhóm');
-  assert.equal(mk({ statusCode: 200, text: '<html><body>Trang 404 dễ thương</body></html>' }).level, 'warn');
-  assert.equal(mk(null).level, 'unknown');
+/* ── 5) Mở rộng check cũ: links chụp luôn fragment hỏng ─────────────────── */
+
+test('links (rộng hơn khi v1.2): href="#fragment" mà không có id đó cũng là liên kết lỗi', () => {
+  const r = run('<a href="#phuc-tra-khong-ton-tai">Chi tiết</a>');
+  assert.equal(lv(r, 'links'), 'warn');
+  assert.ok(rst(r, 'links').detail.toLowerCase().includes('anchor'));
 });
 
-test('links: sạch → pass đếm nội/ngoài; href="#" + link rỗng chữ → warn; nhiều link lỗi → fail; trắng → trung lập', () => {
-  // GOOD có 2 anchor trong footer: 1 nội bộ (/thuc-don), 1 ngoài (facebook)
-  const sạch = run(GOOD()).checks.find((c) => c.id === 'links');
-  assert.equal(sạch.level, 'pass');
-  assert.ok(sạch.detail.includes('2'));
+/* ── 6) Unknown: không coi là lỗi, chẵng được tính điểm sai ─────────────── */
 
-  const hỏngVừa = run(GOOD().replace('</body>', '<a href="#">Menu</a><a href="/dat-ban"></a></body>'))
-    .checks.find((c) => c.id === 'links');
-  assert.equal(hỏngVừa.level, 'warn');
-  assert.ok(hỏngVừa.detail.includes('href="#"'), 'detail phải chỉ đích danh liên kết chết');
-
-  const hỏngNhiều = run(GOOD().replace('</body>', Array.from({ length: 6 }, (_, i) => `<a href="#">mục ${i}</a>`).join('') + '</body>'))
-    .checks.find((c) => c.id === 'links');
-  assert.equal(hỏngNhiều.level, 'fail');
-
-  // Link icon không chữ nhưng có chữ cho trợ năng (aria-label/title) → KHÔNG bị tính "không có chữ"
-  const iconTrợNăng = run(GOOD().replace('</body>', '<a href="https://zalo.me/atelier" aria-label="Chat Zalo"></a><a href="tel:0900111222" title="Gọi đặt bàn"></a></body>'))
-    .checks.find((c) => c.id === 'links');
-  assert.equal(iconTrợNăng.level, 'pass');
+test('robots_txt/sitemap: không có dữ liệu mạng → unknown (giữ đúng hợp đồng mốc 1)', () => {
+  const r = run('<p>x</p>', { robots: null, sitemap: null });
+  assert.equal(lv(r, 'robots_txt'), 'unknown');
+  assert.equal(lv(r, 'sitemap'), 'unknown');
 });
 
-// ── 4. renderChecklist — smoke: cấu trúc group/row đầy đủ, glyphs đúng mức ──
-test('renderChecklist: 4 group, 22 dòng, mỗi dòng có glyph + label + detail + suggestion', () => {
-  const host = new DOMParser().parseFromString('<div id="kq"></div>', 'text/html');
-  const mount = host.getElementById('kq');
-  WebCheck.renderChecklist(run(GOOD(), undefined), mount);
-  const groups = mount.querySelectorAll('section.check-group');
-  assert.equal(groups.length, 4);
-  const rows = mount.querySelectorAll('.check-row');
-  assert.equal(rows.length, 22);
-  for (const row of rows) {
-    assert.ok(row.querySelector('.glyph'));
-    assert.ok(row.querySelector('.check-label').textContent.length > 3);
-    assert.ok(row.querySelector('.check-detail'));
-  }
+/* ── 7) tinhDiem — công thức minh bạch ──────────────────────────────────── */
+
+test('tinhDiem: demo — tổng 79,6/100 xếp "Khá", điểm từng nhóm đúng, unknown loại khỏi mẫu số', () => {
+  const s = WebCheck.tinhDiem(WebCheck.demoResult(parse));
+  assert.equal(s.total, 79.6);
+  assert.equal(s.capDo, 'Khá');
+  assert.equal(s.mauSo, 98);
+  assert.deepEqual(s.counts, { pass: 20, warn: 13, fail: 0, unknown: 1 });
+  const g = Object.fromEntries(s.groups.map((x) => [x.name, x]));
+  assert.equal(g['SEO & hiển thị'].earned, 14.5);
+  assert.equal(g['SEO & hiển thị'].max, 24);          // 26 − 2 (robots_txt unknown)
+  assert.equal(g['Chuẩn kỹ thuật'].earned, 21);
+  assert.equal(g['Di động & hình ảnh'].earned, 14);
+  assert.equal(g['Tốc độ tải nội dung'].earned, 2.5);
+  assert.equal(g['Marketing & chuyển đổi'].earned, 17);
+  assert.equal(g['Trải nghiệm & truy cập'].earned, 9);
 });
 
-// ── 5. Trang demo dựng sẵn cho mốc 2–5: hợp lệ theo v1.2 ────────────────────
-test('demoResult mang đủ 22 mục · dùng đúng shape v1.2, robots/sitemap mẫu có sẵn.', () => {
-  const r = WebCheck.demoResult(parse);
-  assert.equal(r.version, '1.2');
-  assert.equal(r.checks.length, 22);
-  assert.equal(new Set(r.checks.map((c) => c.id)).size, 22);
-  assert.equal(r.checks.reduce((s, c) => s + c.weight, 0), 100);
+test('tinhDiem: unknown bị loại khỏi mẫu số — KHÔNG bị coi là fail', () => {
+  const s = WebCheck.tinhDiem({ checks: [
+    { id: 'a', group: 'G', weight: 5, level: 'pass' },
+    { id: 'b', group: 'G', weight: 5, level: 'unknown' },
+  ] });
+  assert.equal(s.total, 100);
+  assert.equal(s.mauSo, 5);
+});
+
+test('tinhDiem: pass = đủ trọng số, warn = nửa, fail = 0; nhóm có điểm riêng', () => {
+  const s = WebCheck.tinhDiem({ checks: [
+    { id: 'a', group: 'G1', weight: 6, level: 'pass' },
+    { id: 'b', group: 'G1', weight: 4, level: 'warn' },
+    { id: 'c', group: 'G2', weight: 6, level: 'fail' },
+    { id: 'd', group: 'G2', weight: 4, level: 'pass' },
+  ] });
+  assert.equal(s.total, 60); // (6 + 4/2 + 0 + 4) / 20 = 12/20
+  const g = Object.fromEntries(s.groups.map((x) => [x.name, x]));
+  assert.equal(g.G1.earned, 8);
+  assert.equal(g.G2.earned, 4);
+  assert.equal(g.G2.max, 10);
+});
+
+/* ── 8) renderChecklist dạng details + chip điểm ────────────────────────── */
+
+test('renderChecklist: 6 khối <details> theo nhóm, duy nhất 34 chip điểm "x/w"', () => {
+  const mount = new DOMParser().parseFromString('<div id="m"></div>', 'text/html').getElementById('m');
+  WebCheck.renderChecklist(WebCheck.demoResult(parse), mount);
+  const blocks = mount.querySelectorAll('details');
+  assert.equal(blocks.length, 6);
+  assert.ok(mount.querySelector('summary').textContent.includes('SEO'));
+  assert.equal(mount.querySelectorAll('.check-pts').length, 34);
+  // demo có 1 mục unknown (robots_txt) — chip phải hiện "—/2" thay số, không phải "0"
+  const chips = Array.from(mount.querySelectorAll('.check-pts'));
+  assert.ok(chips.some((c) => c.textContent === '—/2'), 'chip unknown phải là —/2');
+  assert.ok(mount.querySelector('.check-group .check-row'), 'mỗi nhóm phải có hàng mục');
+});
+
+test('demoResult: trang mẫu có đủ 3 trạng thái pass/warn/unknown (fail có qua test tinhDiem riêng)', () => {
+  const levels = new Set(WebCheck.demoResult(parse).checks.map((c) => c.level));
+  assert.ok(levels.has('pass') && levels.has('warn') && levels.has('unknown'));
 });

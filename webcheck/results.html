@@ -28,17 +28,23 @@
       <div id="notice" class="notice" hidden role="alert"></div>
 
       <!-- ────────────────────────────────────────────────────────── -->
-      <!-- MỐC 2 cắm vào #score-slot (điểm /100 + tổng hợp):           -->
-      <!--   đọc Result bằng JSON.parse(sessionStorage["webcheck:result"]) -->
+      <!-- MỘC 2 (v1.3 đã cắm): js/moc2-diem.js → #score-slot          -->
+      <!--   điểm /100 + xếp loại + thanh nhóm + thống kê.             -->
       <!-- ────────────────────────────────────────────────────────── -->
       <div id="score-slot" class="slot"></div>
 
       <div id="checklist" aria-label="Checklist từng hạng mục"></div>
 
       <!-- ────────────────────────────────────────────────────────── -->
-      <!-- MỐC 3 cắm vào #ai-slot (nhận xét AI bằng tiếng Việt).       -->
-      <!-- MỐC 4 cắm vào #export-slot (nút xuất báo cáo text).         -->
-      <!-- MỐC 5 cắm vào #history-slot (lịch sử localStorage).         -->
+      <!-- MỐC 3 — AI nhận xét (TẠM THÁO trong v1.3 theo yêu cầu):      -->
+      <!--   slot #ai-slot giữ nguyên và tự ẩn (CSS .slot:empty).       -->
+      <!--   Khi tích hợp lại: (1) thêm <script src="js/moc3-ai.js">    -->
+      <!--   vào cuối trang — file vẫn giữ nguyên framework;            -->
+      <!--   (2) quy ước render vẫn là { summary, strengths,            -->
+      <!--   improvements } vào #ai-slot (contract.md mục 8).           -->
+      <!-- MỐC 4 (v1.3 đã cắm): js/moc4-xuat.js → #export-slot          -->
+      <!--   nút sao chép / tải .txt báo cáo (không AI).                -->
+      <!-- MỐC 5 cắm vào #history-slot (lịch sử localStorage).          -->
       <!-- ────────────────────────────────────────────────────────── -->
       <div id="ai-slot" class="slot"></div>
       <div id="export-slot" class="slot"></div>
@@ -72,7 +78,11 @@
 
 <script src="js/analyze.js" defer></script>
 <script src="js/results.js" defer></script>
-<!-- MỘC 3: khung đã cắm sẵn — bạn mốc 3 chỉ sửa js/moc3-ai.js (hàm layNhanXet), không thêm thẻ -->
-<script src="js/moc3-ai.js" defer></script>
+<!-- MỘC 2 (v1.3): điểm /100 — mốc 1 làm thay đúng yêu cầu, mốc 2 có thể thay file này -->
+<script src="js/moc2-diem.js" defer></script>
+<!-- MỘC 3: script AI ĐÃ THÁO khỏi v1.3 (slot #ai-slot tự ẩn) — file js/moc3-ai.js
+     vẫn giữ nguyên để dựng lại sau khi được phép (contract.md mục 9). -->
+<!-- MỘC 4 (v1.3): xuất báo cáo text — mốc 1 làm thay đúng yêu cầu -->
+<script src="js/moc4-xuat.js" defer></script>
 </body>
 </html>
