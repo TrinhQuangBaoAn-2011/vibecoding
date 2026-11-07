@@ -498,9 +498,12 @@ const WebCheck = (function () {
         'Địa chỉ sitemap.xml phản hồi nhưng nội dung không đúng định dạng XML sơ đồ trang — máy tìm kiếm đọc không được.',
         'Xuất lại sitemap đúng chuẩn (thẻ gốc <urlset> hoặc <sitemapindex>) và đặt tại ten-mien.vn/sitemap.xml.');
     }
-    const urls = (text.match(/<loc>/gi) || []).length;
+    const soDonVi = (text.match(/<loc>/gi) || []).length;
+    const laNhom = /<sitemapindex/i.test(text);
     return out('sitemap', 'pass',
-      `Sitemap.xml đọc được — khai báo ${urls} địa chỉ trang.`,
+      laNhom
+        ? `Sitemap.xml đọc được — dạng nhóm (sitemapindex) dẫn tới ${soDonVi} sơ đồ trang con (mỗi con chứa địa chỉ trang).`
+        : `Sitemap.xml đọc được — khai báo ${soDonVi} địa chỉ trang.`,
       'Cập nhật lại sitemap mỗi khi thêm trang/sản phẩm mới; submit trong Google Search Console.');
   }
 
@@ -527,7 +530,10 @@ const WebCheck = (function () {
           if (baseOrigin && u.origin === baseOrigin) internal++; else external++;
         } catch { dead++; }
       }
-      if (!a.textContent.trim() && !a.querySelector('img')) emptyText++;
+      // Icon-link không chữ hiển thị nhưng có chữ cho trợ năng (aria-label/title)
+      // hay bọc ảnh thì đếm là "có chữ" — đừng oan site làm chuẩn a11y.
+      if (!a.textContent.trim() && !a.querySelector('img')
+          && !a.getAttribute('aria-label') && !a.getAttribute('title')) emptyText++;
     }
     const flawed = dead + emptyText;
     const count = `Trang có ${anchors.length} liên kết: ${internal} nội bộ, ${external} ngoài.`;

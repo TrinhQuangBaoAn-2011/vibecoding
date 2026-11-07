@@ -203,3 +203,7 @@ Dữ liệu 22 hạng mục: <JSON checks[]>
   khi HTTP **404**; 403/5xx → `unknown` (site chặn bot / server sự cố — đúng định nghĩa mục 2,
   đừng kết luận nhầm). Thêm `WebCheck.docKetQua()` (mục 5) — mốc 2–5 dùng nạp Result; spinner
   trang nhập (plan yêu cầu, giờ CSS thật sự sử dụng).
+- **v1.2.1** — hai vá nhỏ phát hiện khi soi độ sâu (số test vẫn 22, shape không đổi):
+  `links` không trừ oan link icon có chữ cho trợ năng (`aria-label`/`title`);
+  chi tiết sitemap nêu đích danh dạng `sitemapindex` (đếm theo nhóm — VnExpress thật:
+  sitemap.xml là nhóm dẫn tới 9455 sơ đồ con, không phải 9455 trang).

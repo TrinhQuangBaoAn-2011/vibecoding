@@ -266,6 +266,10 @@ test('sitemap: 404 → warn, 403/5xx → unknown, XML <urlset> đọc được �
   const ok = mk({ statusCode: 200, text: GOOD_SITEMAP });
   assert.equal(ok.level, 'pass');
   assert.ok(ok.detail.includes('2'), 'detail phải nêu đúng 2 URL trong fixture');
+  // Sitemap dạng "nhóm" (sitemapindex): <loc> đếm là sơ đồ con, không phải số trang — chi tiết phải nêu đích danh
+  const index = mk({ statusCode: 200, text: '<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>https://atlas-cafe.vn/sitemap-san-pham.xml</loc></sitemap><sitemap><loc>https://atlas-cafe.vn/sitemap-bai-viet.xml</loc></sitemap></sitemapindex>' });
+  assert.equal(index.level, 'pass');
+  assert.ok(index.detail.includes('sitemapindex') && index.detail.includes('2'), 'detail phải nêu dạng nhóm (sitemapindex) + đúng số 2 nhóm');
   assert.equal(mk({ statusCode: 200, text: '<html><body>Trang 404 dễ thương</body></html>' }).level, 'warn');
   assert.equal(mk(null).level, 'unknown');
 });
@@ -284,6 +288,11 @@ test('links: sạch → pass đếm nội/ngoài; href="#" + link rỗng chữ �
   const hỏngNhiều = run(GOOD().replace('</body>', Array.from({ length: 6 }, (_, i) => `<a href="#">mục ${i}</a>`).join('') + '</body>'))
     .checks.find((c) => c.id === 'links');
   assert.equal(hỏngNhiều.level, 'fail');
+
+  // Link icon không chữ nhưng có chữ cho trợ năng (aria-label/title) → KHÔNG bị tính "không có chữ"
+  const iconTrợNăng = run(GOOD().replace('</body>', '<a href="https://zalo.me/atelier" aria-label="Chat Zalo"></a><a href="tel:0900111222" title="Gọi đặt bàn"></a></body>'))
+    .checks.find((c) => c.id === 'links');
+  assert.equal(iconTrợNăng.level, 'pass');
 });
 
 // ── 4. renderChecklist — smoke: cấu trúc group/row đầy đủ, glyphs đúng mức ──
