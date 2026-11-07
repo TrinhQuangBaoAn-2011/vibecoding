@@ -1,13 +1,13 @@
-# Kế hoạch Mốc 1 — WebCheck (Đề 5) — đã triển khai xong
+# Kế hoạch Mốc 1 — WebCheck (Đề 5) — hoàn thành + đã deploy
 **Chức năng số 1: nhập URL → kiểm tra tự động các yếu tố cơ bản phía client**
 
 | Hạng mục | Giá trị |
 |---|---|
-| Repo | `D:\Bảo An\code\vibecoding\webcheck` (git init, commit `2ab1392`) |
-| Scope | Chỉ chức năng số 1. Mốc 2 (điểm) · 3 (AI) · 4 (xuất báo cáo) · 5 (lịch sử) — bạn bè |
+| **Link live** | https://webcheck-ghonsh9yg-tqbaoan2k11-8641.vercel.app (Production, public) |
+| Repo | https://github.com/TrinhQuangBaoAn-2011/vibecoding — `webcheck/` là thư mục con; mốc 2–5 đặt thư mục kế bên |
+| Scope | Đúng chức năng số 1. Mốc 2 (điểm) · 3 (AI) · 4 (xuất báo cáo) · 5 (lịch sử) — bạn bè |
 | Stack | Vanilla HTML/CSS/JS + Vercel serverless Node (`api/fetch.mjs`, 0 dependency) |
-| Test | `npm test` — 19/19 xanh; E2E đã chạy thật trên Chrome theo flow nhập → kết quả |
-| Còn lại | **Deploy Vercel (việc của bạn, ~10 phút — mục 4) + push lên GitHub chung của nhóm** |
+| Đã kiểm tra | `npm test` 19/19 · E2E Chrome thật qua Internet (nhập `vnexpress.net` không scheme → checklist thật) · API live: VnExpress 200 / domain chết 502 tiếng Việt · trang demo chạy |
 
 ---
 

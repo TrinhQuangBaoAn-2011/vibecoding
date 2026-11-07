@@ -25,7 +25,11 @@ phải qua `npx vercel dev`. Muốn xem trang kết quả không cần mạng: m
 
 1. Push repo lên GitHub.
 2. Vercel → Add New… → Project → Import repo (không cần cấu hình gì — thư mục `api/` tự nhận là serverless).
-3. Lấy link live. Mỗi lần push nhánh chính là Vercel tự cập nhật.
+3. **Tắt chặn người xem** (bước dễ quên nhất): Settings → Deployment Protection →
+   "Vercel Authentication" → **Disabled** → Save. Không tắt thì mọi link live
+   sẽ ép khách đăng nhập Vercel trước khi thấy trang.
+4. Lấy link live. Mỗi lần push nhánh chính là Vercel tự cập nhật (nếu đã kết nối GitHub
+   qua dashboard: vercel.link/git).
 
 ## Giới hạn công cụ (khai thật khi demo)
 
