@@ -102,25 +102,27 @@ Tổng weight = 100.
 | Mốc | Slot id | Nhiệm vụ |
 |---|---|---|
 | 2 | `#score-slot` | Điểm /100 + tổng hợp theo nhóm |
-| 3 | `#ai-slot` | Nhận xét AI: 3 điểm mạnh, 3 điểm cần cải thiện (feed bằng `title` + `checks[]` tiếng Việt sẵn có) |
+| 3 | `#ai-slot` | Nhận xét AI — **khung `js/moc3-ai.js` + thẻ script đã cắm sẵn**, chỉ thay 1 hàm `layNhanXet()`; spec đầy đủ ở mục 9 |
 | 4 | `#export-slot` | Nút xuất báo cáo text (copy gửi khách) — nên dựng từ Result để không phụ thuộc mốc 3; nếu muốn lồng phần AI thì đọc DOM `#ai-slot` khi có |
 | 5 | `#history-slot` | Lịch sử các lần kiểm tra (localStorage do mốc 5 tự quản, key riêng) |
 
-Slot trống tự ẩn (CSS `:empty { display:none }`). Mỗi mốc thêm file `js/<ten-moc>.js` của mình
-và **1 dòng** `<script defer src="js/&lt;ten-moc&gt;.js">` cuối `results.html`.
+Slot trống tự ẩn (CSS `:empty { display:none }`). Các mốc còn lại làm đúng động tác cũ:
+thêm file `js/<ten-moc>.js` của mình và **1 dòng** `<script defer src="js/&lt;ten-moc&gt;.js">` cuối `results.html`
+(mốc 3 là ngoại lệ duy nhất — khung đã cắm sẵn như trên).
 
 ## 5. Cái người khác có sẵn
 
 - `window.WebCheck` (từ `js/analyze.js`):
   - `runChecks(html, meta, buildDoc)` — chạy lại bộ phân tích (hiếm khi cần; main.js đã làm).
-  - `renderChecklist(result, mount)` — checklist tạm của mốc 1; mốc 2 thay phần này bằng giám điểm đẹp (chỉ cần đổi nội dung bên dưới `#score-slot`, có thể dùng `#checklist` lại hoặc dựng riêng DOM của mình).
+  - `renderChecklist(result, mount)` — checklist tạm của mốc 1; mốc 2 thay phần này bằng bảng chấm điểm đẹp (chỉ cần đổi nội dung bên dưới `#score-slot`, có thể dùng `#checklist` lại hoặc dựng riêng DOM của mình).
   - `demoResult(buildDoc)` — Result mẫu.
 - `styles.css` có sẵn biến màu 4 mức: `--pass/--warn/--fail/--unknown` + nền `*-bg` — dùng trùng để cả trang một giọng.
 
 ## 6. Quy tắc giữ cho ghép không đau
 
 1. Mốc 1 độc quyền: `js/analyze.js`, `js/main.js`, `js/results.js`, `api/fetch.mjs`, `tests/`.
-   Cần thêm hàm gì thì trao đổi — đừng sửa trực tiếp.
+   Mốc 3 độc quyền: `js/moc3-ai.js` (+ `api/ai.mjs` nếu tự tạo proxy).
+   Cần thêm hàm gì thì trao đổi — đừng sửa trực tiếp file của người khác.
 2. Các mốc **chỉ đụng slot của mình** (đặt trong `results.html`, comment đánh dấu sẵn) và file JS riêng.
 3. Đọc kết quả duy nhất từ `sessionStorage["webcheck:result"]` — không tự gọi lại `/api/fetch`.
 4. Không thêm thư viện mới mà không thống nhất cả nhóm (hiện frontend không có dependency — cây thư mục nhẹ, deploy nhanh).
@@ -135,7 +137,56 @@ và **1 dòng** `<script defer src="js/&lt;ten-moc&gt;.js">` cuối `results.htm
 Có thêm chế độ phụ `&soft=1` — riêng mốc 1 dùng để lấy robots.txt/sitemap.xml (lỗi 404 của
 trang gốc trả về 200 kèm `statusCode` thay vì báo lỗi). Các mốc 2–5 không cần biết flag này.
 
-## 8. Lịch sử hợp đồng
+## 8. Mốc 3 — Nhận xét AI (spec + khung sẵn, dùng để vibecode tiếp)
+
+Khung **hoạt động được ngay**: `js/moc3-ai.js` (thẻ `<script defer>` đã cắm vào `results.html`).
+Bạn mốc 3 chỉ cần **thay đúng 1 hàm `layNhanXet(result)`** phía cuối file — phần đọc dữ liệu,
+render, báo lỗi và fallback đã dựng xong. Chưa cắm AI thì khung demo được bằng "bản dự phóng"
+(rule-heuristic) nên cả nhóm không bị kẹt demo.
+
+**Input** (khung đã lấy sẵn): object Result v1.2 — hữu dụng nhất là `result.title` và
+`result.checks[]` (mỗi mục: `label` tiếng Việt, `level` pass/warn/fail/unknown, `detail`,
+`suggestion`). Muốn feed gọn cho AI: chỉ gửi mảng `{ label, level, suggestion }` của 22 mục (~1,5 KB).
+
+**Output bắt buộc** (render khung chờ đúng shape này):
+
+```js
+{
+  summary: '1 câu tóm tắt tình trạng trang',
+  strengths: ['điểm mạnh 1', 'điểm mạnh 2', 'điểm mạnh 3'],
+  improvements: ['việc cần làm 1', 'việc cần làm 2', 'việc cần làm 3'],
+}
+// đúng 3 phần tử mỗi mảng, mỗi câu ≤ 160 ký tự, tiếng Việt
+```
+
+**Ba cách làm AI — chọn 1 làm đường chính:**
+
+| Cách | Cụ thể | Khi nào dùng |
+|---|---|---|
+| A. Key nằm trong trình duyệt | `fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=API_KEY', …)` gọi thẳng từ `layNhanXet()` | Nhanh nhất, không cần thêm file. Key bị lộ trong code public → chỉ hợp demo nội bộ |
+| B. Proxy serverless (khuyên dùng) | Tạo `api/ai.mjs` kiểu giống `api/fetch.mjs`: nhận POST từ `layNhanXet()` → gọi Gemini/Groq bằng key lấy từ biến môi trường → trả lại JSON đã rút gọn | Key nằm trong Vercel Environment Variables → không lộ, link live dùng được cho mọi người |
+| C. Không gọi AI | Bản "dự phóng" đang có sẵn trong khung (sinh lời nhận xét từ rule trên 22 mục) | Mặc định fallback khi A/B hỏng — **giữ nguyên, đừng xoá** |
+
+**Key miễn phí + model:** Google AI Studio (aistudio.google.com) — tạo key Gemini không phí;
+Groq cũng có free tier. Quán: `gemini-2.5-flash` (nhanh, hiểu tiếng Việt tốt, đủ cho việc này).
+Key vào Vercel: Settings → Environment Variables (hoặc `vercel env add GEMINI_API_KEY`); chạy local
+bằng `vercel dev` đọc `.env.local`.
+
+**Prompt mẫu dán cho model** (soạn trong `layNhanXet()`):
+
+```
+Bạn là cố vấn SEO bằng tiếng Việt cho chủ doanh nghiệp nhỏ. Trả về DUY NHẤT một JSON hợp lệ,
+không giải thích, theo dạng {"summary": "…", "strengths": ["…","…","…"], "improvements": ["…","…","…"]}.
+Mỗi chuỗi ≤ 160 ký tự, giọng thân thiện, dựa CHỈ vào dữ liệu bên dưới, không bịa con số.
+Dữ liệu 22 hạng mục: <JSON checks[]>
+```
+
+**Chống lỗi format:** dùng responseMimeType JSON của Gemini (hoặc thêm "chỉ trả JSON" vào prompt),
+`JSON.parse` trong try/catch — hỏng thì ném lỗi để khung rơi về bản dự phóng (C).
+
+**Chưa có key kiểm thử:** mở `results.html?demo=1` — khung tự chạy bản dự phóng.
+
+## 9. Lịch sử hợp đồng
 
 - **v1.1** (mốc 1 ban đầu) — 19 mục.
 - **v1.2** (hiện tại) — thêm 3 mục: `robots_txt`, `sitemap` (nhóm SEO & hiển thị) và `links`
