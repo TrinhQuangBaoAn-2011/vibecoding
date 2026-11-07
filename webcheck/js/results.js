@@ -3,7 +3,7 @@
  * WebCheck — trang kết quả (Mốc 1, Đề 5)
  * Đọc Result qua WebCheck.docKetQua() (?demo=1 → Result mẫu, ngược lại sessionStorage)
  * rồi dựng: phần tóm tắt + checklist tạm (WebCheck.renderChecklist) + các slot trống
- * chờ mốc 2 (điểm), 3 (AI), 4 (xuất báo cáo), 5 (lịch sử).
+ * chờ mốc 2 (tổng quan trạng thái), 3 (AI), 4 (xuất báo cáo), 5 (lịch sử).
  * Nếu mở trực tiếp results.html?demo=1 → dùng Result mẫu (không cần mạng),
  * các mốc dựng phần của mình dựa trên dữ liệu này được ngay.
  */

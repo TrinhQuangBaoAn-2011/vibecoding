@@ -298,15 +298,10 @@ body {
 }
 
 .check-row {
-  display: grid;
-  grid-template-columns: 26px 1fr auto; /* v1.3: + cột chip điểm */
-  gap: 12px;
   padding-block: 13px;
 }
 
 .check-row + .check-row { border-top: 1px solid var(--paper); }
-
-.check-row .check-pts { align-self: start; }
 
 .glyph {
   width: 25px;
@@ -317,13 +312,13 @@ body {
   justify-content: center;
   font-size: 13px;
   font-weight: 700;
-  margin-top: 1px;
+  margin-top: -2px;
 }
 
-.level-pass    .glyph { background: var(--pass-bg);    color: var(--pass); }
-.level-warn    .glyph { background: var(--warn-bg);    color: var(--warn); }
-.level-fail    .glyph { background: var(--fail-bg);    color: var(--fail); }
-.level-unknown .glyph { background: var(--unknown-bg); color: var(--unknown); }
+.glyph.st-pass    { background: var(--pass-bg);    color: var(--pass); }
+.glyph.st-warn    { background: var(--warn-bg);    color: var(--warn); }
+.glyph.st-fail    { background: var(--fail-bg);    color: var(--fail); }
+.glyph.st-unknown { background: var(--unknown-bg); color: var(--unknown); }
 
 .check-body p { margin: 0; }
 
@@ -341,6 +336,12 @@ body {
 .check-suggestion {
   color: var(--muted);
   font-size: 0.88rem;
+  margin-top: 4px;
+}
+
+.check-impact {
+  color: #46565F;
+  font-size: 0.91rem;
   margin-top: 4px;
 }
 
@@ -389,73 +390,65 @@ body {
   .hero { margin-top: 34px; }
 }
 
-/* ════ v1.3 — Mốc 2: khối điểm /100 ═════════════════════════════════════ */
+/* ════ v2.0 — Mốc 2: tổng quan 4 trạng thái + việc cần làm P0/P1 ════════ */
 
-.score { display: grid; gap: 16px; }
+.ov { display: grid; gap: 14px; }
 
-.score-hero {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
+.ov-title { font-size: 1.2rem; margin: 0; }
+
+.ov-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
-.score-num { margin: 0; line-height: 1; white-space: nowrap; }
-
-.score-big {
-  font-size: 3.4rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  background: var(--brand);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.ov-stat {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  padding: 10px 6px 8px;
+  display: grid;
+  justify-items: center;
+  text-align: center;
 }
 
-.score-of { font-size: 1.3rem; color: var(--muted); margin-left: 2px; }
+.ov-num { font-size: 1.7rem; font-weight: 700; line-height: 1.1; }
+.ov-word { font-size: 0.8rem; }
 
-.score-side { display: grid; gap: 6px; min-width: 210px; }
+.ov-st-pass    { background: var(--pass-bg); }
+.ov-st-warn    { background: var(--warn-bg); }
+.ov-st-fail    { background: var(--fail-bg); }
+.ov-st-unknown { background: var(--unknown-bg); }
 
-.score-grade {
-  margin: 0;
-  display: inline-block;
-  align-self: start;
+.ov-st-pass    .ov-num { color: var(--pass); }
+.ov-st-warn    .ov-num { color: var(--warn); }
+.ov-st-fail    .ov-num { color: var(--fail); }
+.ov-st-unknown .ov-num { color: var(--unknown); }
+
+.ov-note { margin: 0; font-size: 0.87rem; color: var(--muted); }
+
+.ov-todo,
+.ov-questions {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 14px 14px;
+}
+
+.ov-h3 {
+  margin: 6px 0 2px;
+  font-size: 0.8rem;
   font-weight: 700;
-  font-size: 1.02rem;
-  padding: 3px 12px;
-  border-radius: 999px;
-  background: var(--brand-tint);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
   color: var(--brand);
 }
-.score-grade[data-grade="Tốt"]        { background: var(--pass-bg);    color: var(--pass); }
-.score-grade[data-grade="Khá"]        { background: var(--pass-bg);    color: var(--pass); }
-.score-grade[data-grade="Trung bình"] { background: var(--warn-bg);    color: var(--warn); }
-.score-grade[data-grade="Yếu"]        { background: var(--fail-bg);    color: var(--fail); }
-.score-grade[data-grade="Rất yếu"]    { background: var(--fail-bg);    color: var(--fail); }
 
-/* Thống kê đếm theo 4 trạng thái — tái dùng bộ màu :root mặc định */
-.counts {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 18px;
-  font-size: 0.94rem;
+.ov-sub {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0 0 6px;
 }
-.counts .glyph {
-  display: inline-block;
-  width: 1.2em;
-  text-align: center;
-  font-weight: 700;
-}
-.counts .c-pass   .glyph { color: var(--pass); }
-.counts .c-warn   .glyph { color: var(--warn); }
-.counts .c-fail   .glyph { color: var(--fail); }
-.counts .c-unknown .glyph { color: var(--unknown); }
 
-/* Thanh điểm theo nhóm */
-.gbars {
+.ov-todo-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -463,58 +456,146 @@ body {
   gap: 10px;
 }
 
-.gbar-row {
+.ov-todo-item { border-top: 1px dashed var(--line); padding-top: 10px; }
+
+.ov-todo-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.ov-todo-name { font-weight: 600; font-size: 0.97rem; }
+
+.ov-todo-detail {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: #46565F;
+}
+
+.ov-todo-fix {
+  margin: 4px 0 0;
+  font-size: 0.87rem;
+  color: var(--muted);
+}
+
+.ov-glyph { font-weight: 700; }
+
+.ov-st-pass    .ov-glyph { color: var(--pass); }
+.ov-st-warn    .ov-glyph { color: var(--warn); }
+.ov-st-fail    .ov-glyph { color: var(--fail); }
+.ov-st-unknown .ov-glyph { color: var(--unknown); }
+
+.ov-q-list { margin: 0; display: grid; gap: 8px; }
+
+.ov-q {
+  font-weight: 600;
+  margin-top: 8px;
+  font-size: 0.95rem;
+}
+
+.ov-q-list dd { margin: 2px 0 0; }
+
+.ov-a-lead { margin: 0; font-size: 0.92rem; }
+
+.ov-st-pass    .ov-a-lead { color: var(--pass); }
+.ov-st-warn    .ov-a-lead { color: var(--warn); }
+.ov-st-fail    .ov-a-lead { color: var(--fail); }
+.ov-st-unknown .ov-a-lead { color: var(--unknown); }
+
+.ov-a-item {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+}
+
+.ov-a-fix {
+  margin: 4px 0 6px 33px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ════ v2.0 — Bộ lọc checklist (trạng thái + ưu tiên) ═══════════════════ */
+
+.chk-filters {
   display: grid;
-  grid-template-columns: minmax(9.5em, 15em) 1fr auto;
-  gap: 10px;
+  gap: 8px;
+  margin: 26px 0 2px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   align-items: center;
 }
 
-.gbar-name { font-size: 0.93rem; }
-
-.gbar {
-  height: 12px;
-  border-radius: 999px;
-  background: var(--brand-tint);
-  overflow: hidden;
-  display: block;
-}
-
-.gbar-fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--brand);
-}
-
-.gbar-pts {
+.filter-label {
   font-size: 0.86rem;
   color: var(--muted);
-  white-space: nowrap;
-  min-width: 8em;
-  text-align: right;
+  margin-right: 2px;
 }
 
-.gbar-note {
-  grid-column: 1 / -1;      /* luôn chiếm nguyên 1 dòng dưới — không chen giữa bar */
-  font-size: 0.82rem;
-  color: var(--muted);
-  margin: 0;
-}
-@media (max-width: 620px) {
-  .gbar-row { grid-template-columns: 9.5em 1fr auto; }
-}
-
-.score-note {
-  margin: 0;
-  padding: 10px 14px;
-  background: var(--unknown-bg);
-  border-radius: var(--radius-s);
+.chip {
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--sheet);
   color: var(--ink);
-  font-size: 0.9rem;
+  cursor: pointer;
 }
 
-/* ════ v1.3 — Checklist dạng <details>, chip điểm ══════════════════════ */
+.chip:hover { border-color: var(--brand); color: var(--brand); }
+
+.chip.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.chip-n { font-weight: 500; opacity: 0.78; font-size: 0.8rem; }
+
+.filter-note { margin: 0; font-size: 0.82rem; color: var(--muted); }
+
+/* Badge: loại bằng chứng + mức ưu tiên */
+.badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge.method { background: var(--brand-tint); color: var(--brand); font-weight: 500; }
+
+.pr-P0 { background: var(--fail-bg);    color: var(--fail); }
+.pr-P1 { background: var(--warn-bg);    color: var(--warn); }
+.pr-P2 { background: var(--brand-tint); color: var(--brand); }
+.pr-P3 { background: var(--unknown-bg); color: var(--unknown); }
+
+/* Hàng đầu của một mục checklist v2.0 (glyph + tên + badge) */
+.check-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.check-head .check-label { flex: 1 1 auto; margin: 0; }
+
+@media (max-width: 620px) {
+  .ov-stats { grid-template-columns: 1fr 1fr; }
+}
+
+/* ════ v2.0 — Checklist dạng <details> theo nhóm ═══════════════════════ */
 
 details.check-group {
   border: 1px solid var(--line);
@@ -552,23 +633,20 @@ details.check-group h2 {
   display: inline;
 }
 
-/* khoảng cách giữa tên nhóm và chuỗi "x/y điểm · n/m đạt" */
+/* khoảng cách giữa tên nhóm và chuỗi tóm tắt trạng thái nhóm */
 details.check-group h2 .group-sum { margin-left: 10px; display: inline-block; }
 
-/* chip điểm từng mục "x/w" — unknown có nền xám riêng */
-.check-pts {
-  font-size: 0.8rem;
-  font-weight: 600;
-  align-self: flex-start;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--unknown-bg);
-  color: var(--unknown);
-  white-space: nowrap;
+/* nội dung từng mục thụt vào dưới hàng đầu (dưới glyph) */
+.check-detail,
+.check-impact,
+.check-suggestion {
+  margin-left: 33px;
 }
-.check-row.level-pass .check-pts   { background: var(--pass-bg);    color: var(--pass); }
-.check-row.level-warn .check-pts   { background: var(--warn-bg);    color: var(--warn); }
-.check-row.level-fail .check-pts   { background: var(--fail-bg);    color: var(--fail); }
+@media (max-width: 520px) {
+  .check-detail,
+  .check-impact,
+  .check-suggestion { margin-left: 0; }
+}
 
 /* ════ v1.3 — Mốc 4: xuất báo cáo text ═════════════════════════════════ */
 

@@ -1,22 +1,23 @@
 'use strict';
 /*
- * MỘC 4 — Xuất báo cáo text (v1.3, làm bởi mốc 1 theo yêu cầu v1.3)
- * Cắm vào #export-slot (results.html): dựng báo cáo thuần text từ
- * Result + WebCheck.tinhDiem() rồi cho 2 nút: sao chép / tải .txt.
- * KHÔNG AI: báo cáo v1.3 chỉ có URL, thời điểm, điểm tổng, điểm nhóm, từng tiêu
- * chí (trạng thái, điểm, kết quả, gợi ý) — không nhận xét AI (contract.md mục 8).
+ * MỘC 4 — Xuất báo cáo text (v2.0)
+ * Cắm vào #export-slot (results.html): dựng báo cáo thuần text từ Result v2.0
+ * ({status, priority, detail, impact, suggestion}) rồi cho 3 nút: sao chép / tải .txt / xem trước.
+ * KHÔNG ĐIỂM: v2.0 bỏ hoàn toàn điểm /100 — báo cáo sắp theo mức ưu tiên P0→P3,
+ * dùng đúng bảng từ của analyze.js (WebCheck.STATUS_WORDS / PRIORITY_WORDS).
+ * KHÔNG AI: không nhận xét tự động (contract.md mục 8 — moc3-ai.js là mốc riêng).
  */
 (function () {
   const SLOT = document.getElementById('export-slot');
   if (!SLOT) return;
   const result = WebCheck.docKetQua();
-  if (!result) return;
+  if (!result || !Array.isArray(result.checks)) return;
 
-  const s = WebCheck.tinhDiem(result);
-  const fmt = (n) => (n == null ? '—' : (Math.round(n * 10) / 10).toString().replace('.', ','));
-  const WORDS = { pass: 'Đạt', warn: 'Cảnh báo', fail: 'Chưa đạt', unknown: 'Không rõ' };
+  const STATUS = WebCheck.STATUS_WORDS;
+  const PRIORITY = WebCheck.PRIORITY_WORDS;
+  const checks = result.checks;
 
-  // Thời điểm: ưu tiên fetchedAt từng Result; kết thúc bằng ISO → chuyển "7/11/2026 14:30".
+  // Thời điểm: ưu tiên fetchedAt của Result; lỗi định dạng thì in nguyên chuỗi ISO.
   let khi = '—';
   if (result.fetchedAt) {
     try {
@@ -26,43 +27,95 @@
     } catch { khi = String(result.fetchedAt); }
   }
 
+  // Dòng mục:  "[Chưa đạt · P1 — Cao] Tên hạng mục"
+  const tagOf = (c) => {
+    const st = STATUS[c.status] || c.status;
+    return c.priority ? `[${st} · ${c.priority} — ${PRIORITY[c.priority]}]` : `[${st}]`;
+  };
+  // Thứ tự ưu tiên khi sắp trong nhóm: P0 → P1 → P2 → P3 → không có (pass/unknown đầu mục).
+  const prRank = (c) => (c.priority ? Number(c.priority.slice(1)) : 9);
+  const stRank = (c) => ({ fail: 0, warn: 1, unknown: 2, pass: 3 }[c.status] ?? 4);
+
+  const sortChecks = (list) => list.slice().sort((a, b) => {
+    if (stRank(a) !== stRank(b)) return stRank(a) - stRank(b);
+    if (prRank(a) !== prRank(b)) return prRank(a) - prRank(b);
+    return a.id.localeCompare(b.id);
+  });
+
   function buildReport() {
     const L = [];
-    L.push('WEBCHECK — BÁO CÁO KIỂM TRA WEBSITE');
-    L.push('='.repeat(46));
+    L.push('WEBCHECK — BÁO CÁO KIỂM TRA WEBSITE (v2.0)');
+    L.push('='.repeat(52));
     L.push(`Địa chỉ kiểm tra    : ${result.url || '—'}`);
     L.push(`Địa chỉ cuối cùng   : ${result.finalUrl || '—'}`);
     L.push(`Thời điểm kiểm tra  : ${khi}`);
     L.push(`Mã trạng thái HTTP  : ${result.statusCode == null ? '—' : result.statusCode}`);
     L.push(`Phiên bản bộ kiểm   : WebCheck v${result.version || '—'} (${WebCheck.VERSION})`);
     L.push('');
-    L.push(`TỔNG ĐIỂM           : ${fmt(s.total)}/100 — xếp loại ${s.capDo}`);
-    L.push(`Thực chấm được      : ${fmt(s.mauSo)}/100 trọng số` +
-      (s.counts.unknown ? ` (${s.counts.unknown} mục unknown loại khỏi mẫu số)` : ''));
-    L.push(`Đạt / Cảnh báo / Chưa đạt / Không rõ: ${s.counts.pass} / ${s.counts.warn} / ${s.counts.fail} / ${s.counts.unknown}`);
+
+    // Tổng quan: đếm 4 trạng thái — không có điểm, không xếp loại.
+    const counts = { pass: 0, warn: 0, fail: 0, unknown: 0 };
+    for (const c of checks) if (counts[c.status] != null) counts[c.status] += 1;
+    L.push(`TỔNG QUAN (${checks.length} hạng mục)`);
+    const pad = (s, w) => s + ' '.repeat(Math.max(0, w - s.length));
+    L.push(`  ${pad(STATUS.pass, 8)}: ${counts.pass}`);
+    L.push(`  ${pad(STATUS.warn, 8)}: ${counts.warn}`);
+    L.push(`  ${pad(STATUS.fail, 8)}: ${counts.fail}`);
+    L.push(`  ${pad(STATUS.unknown, 8)}: ${counts.unknown}` +
+      (counts.unknown ? '  (không phải lỗi — chưa đủ bằng chứng để kết luận)' : ''));
     L.push('');
-    L.push('ĐIỂM THEO NHÓM');
-    for (const g of s.groups) {
-      L.push(`  • ${g.name}: ${fmt(g.earned)}/${fmt(g.max)} điểm` +
-        (g.max < g.weight ? ` (thang đủ ${fmt(g.weight)}, unknown bị loại)` : ''));
+
+    // Việc cần làm trước: P0 rồi P1 (fail/warn) — khuyến khích xử lý theo thứ tự.
+    const pronto = sortChecks(checks.filter(
+      (c) => (c.priority === 'P0' || c.priority === 'P1') && (c.status === 'fail' || c.status === 'warn'),
+    ));
+    L.push('CẦN LÀM TRƯỚC (P0 — Khẩn, P1 — Cao)');
+    L.push('-'.repeat(52));
+    if (!pronto.length) {
+      L.push('  Không có mục nào ở mức P0/P1 cần xử lý trước. Hãy xem phần chi tiết');
+      L.push('  để chọn việc theo mức P2 (Trung bình) và P3 (Khuyến nghị).');
+    }
+    for (const c of pronto) {
+      L.push(`  ${tagOf(c)} ${c.label}`);
+      if (c.detail) L.push(`      Bằng chứng   : ${c.detail}`);
+      if (c.impact) L.push(`      Tác động     : ${c.impact}`);
+      if (c.suggestion) L.push(`      Việc cần làm : ${c.suggestion}`);
+      L.push('');
     }
     L.push('');
-    L.push('CHI TIẾT TỪNG TIÊU CHÍ');
-    L.push('-'.repeat(46));
+
+    // Chi tiết từng hạng mục: theo nhóm (đúng thứ tự DEFS), trong nhóm sắp P0→P3.
+    L.push(`CHI TIẾT TỪNG HẠNG MỤC (${checks.length} mục)`);
+    L.push('='.repeat(52));
     let groupCur = '';
-    for (const c of result.checks) {
+    for (const c of sortChecks(checks)) {
       if (c.group !== groupCur) {
         groupCur = c.group;
         L.push(`[${groupCur}]`);
       }
-      const diem = c.level === 'pass' ? c.weight : c.level === 'warn' ? c.weight / 2 : null;
-      L.push(`  [${WORDS[c.level] || c.level}] ${c.label} — ${fmt(diem)}/${c.weight} điểm`);
-      L.push(`    Kết quả: ${c.detail}`);
-      if (c.suggestion) L.push(`    Gợi ý  : ${c.suggestion}`);
+      L.push(`  ${tagOf(c)} ${c.label}`);
+      if (c.detail) L.push(`      Bằng chứng   : ${c.detail}`);
+      if (c.status === 'warn' || c.status === 'fail') {
+        if (c.impact) L.push(`      Tác động     : ${c.impact}`);
+        if (c.suggestion) L.push(`      Việc cần làm : ${c.suggestion}`);
+      } else if (c.suggestion) {
+        L.push(`      Giữ hướng    : ${c.suggestion}`);
+      }
+      L.push('');
     }
+
+    L.push('GIỚI HẠN CỦA BÁO CÁO');
+    L.push('-'.repeat(52));
+    L.push('- WebCheck đọc HTML tĩnh của trang chủ tại thời điểm kiểm tra; nội dung do');
+    L.push('  JavaScript thêm sau khi tải (giỏ hàng, giá động…) không nằm trong kết quả.');
+    L.push('- Kết quả phản ánh trang chủ, không phủ toàn bộ website (trang con, sản phẩm,');
+    L.push('  landing quảng cáo).');
+    L.push(`- Mục "${STATUS.unknown}" KHÔNG phải là lỗi: bộ kiểm chỉ kết luận khi có bằng`);
+    L.push('  chứng chắc (ví dụ site chặn bot quét robots.txt thì không thể kết luận có tệp).');
+    L.push('- Không chấm điểm, không xếp loại website: mỗi mục nêu Trạng thái + Mức ưu');
+    L.push('  tiên + Bằng chứng để bạn tự quyết việc nào làm trước.');
     L.push('');
-    L.push('Báo cáo sinh tự động từ dữ liệu HTML của trang (WebCheck v1.3, không dùng AI).');
-    L.push('Kết quả phản ánh trang chủ tại thời điểm kiểm tra — không phủ toàn bộ website.');
+    L.push('Báo cáo sinh tự động từ dữ liệu HTML của trang (WebCheck v2.0, không dùng AI).');
     return L.join('\n');
   }
 
@@ -75,7 +128,7 @@
   SLOT.innerHTML = `
   <div class="export">
     <h2 class="slot-title">Tải / sao chép báo cáo</h2>
-    <p class="slot-help">Bản text đầy đủ: điểm tổng, điểm nhóm và từng tiêu chí (trạng thái, điểm, kết quả, gợi ý).</p>
+    <p class="slot-help">Bản text đầy đủ: tổng quan 4 trạng thái, phần "Cần làm trước" (P0/P1) và từng hạng mục theo nhóm (trạng thái, mức ưu tiên, bằng chứng, việc cần làm).</p>
     <div class="export-actions">
       <button id="btn-report-copy" class="button" type="button">Sao chép báo cáo</button>
       <button id="btn-report-save" class="button" type="button">Tải tệp .txt</button>

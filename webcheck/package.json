@@ -1,9 +1,9 @@
 {
   "name": "webcheck",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "WebCheck — kiểm tra nhanh + chấm điểm /100 nền móng website doanh nghiệp nhỏ (34 hạng mục, Đề 5)",
+  "description": "WebCheck — kiểm tra nhanh nền móng website doanh nghiệp nhỏ: 60 hạng mục, trạng thái 4 mức + ưu tiên P0–P3 có bằng chứng (Đề 5)",
   "scripts": {
     "test": "node --test tests/"
   },

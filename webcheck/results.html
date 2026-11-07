@@ -28,10 +28,11 @@
       <div id="notice" class="notice" hidden role="alert"></div>
 
       <!-- ────────────────────────────────────────────────────────── -->
-      <!-- MỘC 2 (v1.3 đã cắm): js/moc2-diem.js → #score-slot          -->
-      <!--   điểm /100 + xếp loại + thanh nhóm + thống kê.             -->
+      <!-- MỘC 2 (v2.0 đã cắm): js/moc2-tongquan.js → #summary-slot    -->
+      <!--   thống kê 4 trạng thái + bảng "Việc cần làm trước" P0/P1   -->
+      <!--   + trả lời 6 câu hỏi doanh nghiệp (KHÔNG có điểm, no AI).  -->
       <!-- ────────────────────────────────────────────────────────── -->
-      <div id="score-slot" class="slot"></div>
+      <div id="summary-slot" class="slot"></div>
 
       <div id="checklist" aria-label="Checklist từng hạng mục"></div>
 
@@ -42,8 +43,8 @@
       <!--   vào cuối trang — file vẫn giữ nguyên framework;            -->
       <!--   (2) quy ước render vẫn là { summary, strengths,            -->
       <!--   improvements } vào #ai-slot (contract.md mục 8).           -->
-      <!-- MỐC 4 (v1.3 đã cắm): js/moc4-xuat.js → #export-slot          -->
-      <!--   nút sao chép / tải .txt báo cáo (không AI).                -->
+      <!-- MỐC 4 (v2.0 đã cắm): js/moc4-xuat.js → #export-slot      -->
+      <!--   nút sao chép / tải .txt báo cáo P0→P3 (không AI).       -->
       <!-- MỐC 5 cắm vào #history-slot (lịch sử localStorage).          -->
       <!-- ────────────────────────────────────────────────────────── -->
       <div id="ai-slot" class="slot"></div>
@@ -59,6 +60,10 @@
       <p>
         Trang này lấy dữ liệu từ lần kiểm tra vừa chạy. Hãy quay lại trang chính,
         nhập địa chỉ rồi bấm "Kiểm tra trang".
+      </p>
+      <p class="help">
+        Nếu bạn vừa cập nhật WebCheck lên v2.0, kết quả chấm từ phiên bản cũ (v1.2/v1.3)
+        không còn tương thích — chạy lại kiểm tra để có kết quả theo hệ thống mới.
       </p>
       <p class="help">
         Đang dựng phần của mình cho mốc sau? Mở
@@ -78,11 +83,11 @@
 
 <script src="js/analyze.js" defer></script>
 <script src="js/results.js" defer></script>
-<!-- MỘC 2 (v1.3): điểm /100 — mốc 1 làm thay đúng yêu cầu, mốc 2 có thể thay file này -->
-<script src="js/moc2-diem.js" defer></script>
+<!-- MỘC 2 (v2.0): tổng quan trạng thái + ưu tiên P0–P3, không có điểm/score -->
+<script src="js/moc2-tongquan.js" defer></script>
 <!-- MỘC 3: script AI ĐÃ THÁO khỏi v1.3 (slot #ai-slot tự ẩn) — file js/moc3-ai.js
      vẫn giữ nguyên để dựng lại sau khi được phép (contract.md mục 9). -->
-<!-- MỘC 4 (v1.3): xuất báo cáo text — mốc 1 làm thay đúng yêu cầu -->
+<!-- MỐC 4 (v2.0): xuất báo cáo text P0→P3 — không điểm, không AI -->
 <script src="js/moc4-xuat.js" defer></script>
 </body>
 </html>
