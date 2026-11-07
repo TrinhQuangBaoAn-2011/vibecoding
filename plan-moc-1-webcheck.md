@@ -1,24 +1,25 @@
-# Kế hoạch Mốc 1 — WebCheck (Đề 5) — hoàn thành + đã deploy
+# Kế hoạch Mốc 1 — WebCheck (Đề 5) — hoàn thành + đã deploy v2.0
 **Chức năng số 1: nhập URL → kiểm tra tự động các yếu tố cơ bản phía client**
 
 | Hạng mục | Giá trị |
 |---|---|
-| **Link live** | https://webcheck-eta.vercel.app (alias production ổn định — không đổi theo lần deploy; deployment-hash: webcheck-gulv6skmo-tqbaoan2k11-8641.vercel.app) |
+| **Link live** | https://webcheck-eta.vercel.app (v2.0 đã chạy — deploy CLI từ thư mục `webcheck/`) |
 | Repo | https://github.com/TrinhQuangBaoAn-2011/vibecoding — `webcheck/` là thư mục con; mốc 2–5 đặt thư mục kế bên |
-| Scope | Đúng chức năng số 1. Mốc 2 (điểm) · 3 (AI) · 4 (xuất báo cáo) · 5 (lịch sử) — bạn bè |
+| Scope | Đúng chức năng số 1. Mốc 2 (tổng quan trạng thái) · 3 (AI) · 4 (xuất báo cáo) · 5 (lịch sử) — bạn bè |
 | Stack | Vanilla HTML/CSS/JS + Vercel serverless Node (`api/fetch.mjs`, 0 dependency) |
-| Đã kiểm tra | `npm test` 22/22 (v1.2) · E2E Chrome thật qua Internet (nhập `vnexpress.net` không scheme → checklist 22 mục thật) · API live: VnExpress 200 / domain chết 502 tiếng Việt · chế độ `?soft=1` cho robots/sitemap · trang demo chạy |
+| Đã kiểm tra | `npm test` 46/46 (v2.0) · E2E Chrome thật trên live: demo `?demo=1`, bộ lọc, xuất báo cáo, gate kết quả cũ, kiểm tra thật `example.com` (60/60 mục) |
 
 ---
 
-## 1. Đã chốt thiết kế (khác so với bản kế hoạch gốc)
+## 1. Đã chốt thiết kế (v2.0)
 
-| Quyết định | Bản gốc | Đã chốt sau hỏi thêm |
+| Quyết định | Bản v1.x | v2.0 (hiện tại) |
 |---|---|---|
-| Số mục check | 11 | **22** (19 mục "mở rộng lớn" — bạn chọn; rồi nâng v1.2 thêm robots.txt, sitemap, liên kết) |
-| Mức đánh giá | 3 trạng thái | **4 mức: Đạt / Cảnh báo / Chưa đạt / ?** — field `level` + giữ `passed` cho mốc 2 |
-| Gợi ý sửa | Trách mốc AI | **Field `suggestion` riêng** (1 câu tiếng Việt cho từng nhánh) — tách khỏi `detail` |
-| Giọng văn | — | **Việt dễ hiểu + thuật ngữ trong ngoặc** |
+| Số mục check | 22 → 34 (v1.2 → v1.3) | **60** (34 ID cũ giữ nguyên + 26 mới) |
+| Cách đánh giá | 4 trạng thái + chấm điểm /100 (v1.3) | **4 trạng thái + ưu tiên P0–P3 có bằng chứng — bỏ hoàn toàn điểm /100** |
+| Nhóm | 4 → 6 nhóm | **7 nhóm** (thêm "Tin cậy & minh bạch") |
+| Bằng chứng | `detail` (kết quả) | `detail` (bằng chứng) + `impact` (tác động doanh nghiệp) + `method` (HTML tĩnh / Tài nguyên mạng / HTML + mạng) |
+| Gợi ý sửa | Trách mốc AI | **Field `suggestion` riêng** — warn/fail: "Hướng khắc phục: ", pass/unknown: "Giữ hướng: " |
 | Backend | Express+Render | **Vercel serverless** (bạn chọn A — không cold start) |
 
 ## 2. Kiến trúc đã dựng
@@ -30,36 +31,48 @@ Trình duyệt
       cap 2 MB, không nhận non-HTML, đều trả {error,detail} tiếng Việt;
       cờ ?soft=1 riêng để lấy robots.txt/sitemap.xml — 404 trả về như dữ liệu)
   js/analyze.js — TRÁI TIM, chạy phía client (đúng chữ "phía client" trong đề):
-    runChecks(html, meta, buildDoc) → Result v1.2
+    runChecks(html, meta, buildDoc) → Result v2.0:
+      checks[] = { id, label, group, method, status, priority, detail, impact, suggestion }
+      status ∈ pass/warn/fail/unknown · priority ∈ P0–P3 (chỉ khi warn/fail)
+      nguyên tắc: unknown ≠ lỗi · Chưa đạt ≠ P0 · cấm hiển thị điểm
   results.html — tóm tắt (title site, URL mono, thời điểm, thời gian tải, HTTP code)
-    + checklist theo 4 nhóm + 4 slot trống chờ mốc 2–5 (comment đánh dấu sẵn)
-Result lưu: sessionStorage["webcheck:result"] → mốc 2,3,4 đọc; mốc 5 tự lưu localStorage
-Result mẫu không cần mạng: results.html?demo=1 (quán cà phê Mộc — Đà Lạt, nhiều warn thực tế)
+    + thống kê 4 trạng thái + "Việc cần làm trước" P0/P1 + 6 câu hỏi doanh nghiệp (mốc 2)
+    + checklist 60 mục / 7 nhóm với chip lọc trạng thái + ưu tiên
+    + xuất báo cáo text P0→P3 (mốc 4) + các slot chờ mốc 3 (AI) / 5 (lịch sử)
+Result lưu: sessionStorage["webcheck:result"] → mốc 2,3,4 đọc qua WebCheck.docKetQua()
+  (gate: chỉ nhận version '2.0' — kết quả v1.2/v1.3 bị từ chối khéo léo)
+Result mẫu không cần mạng: results.html?demo=1 (quán cà phê Mộc — Đà Lạt, chốt 42/14/3/1)
 ```
 
-## 3. Bộ 19 mục (weight = 100, `level` ∈ pass/warn/fail/unknown)
+## 3. Bộ 60 mục (7 nhóm — bảng đầy đủ + PRIORITY_MAP trong `contract.md` mục 3)
 
-**SEO & hiển thị (36)**: title 10 (30–60 ký tự) · meta_description 10 (70–160) · open_graph 4 (og:title+og:image) · canonical 4 · robots_meta 4 (noindex=fail) · structured_data 4 (JSON-LD, parse hợp lệ)
-**Chuẩn kỹ thuật (32)**: https 8 · lang 4 · charset 4 (UTF-8) · h1 8 (đúng 1) · heading_system 4 (nhảy bậc h2→h4 = warn) · analytics 4 (GTM/GA4/Pixel/Matomo…)
-**Di động & hình ảnh (28)**: viewport 10 (width=device-width) · img_alt 8 (0 ảnh thiếu; thiếu một phần=warn; thíu hết=fail) · favicon 4 · theme_color 2 · lazy_load 4 (≥5 ảnh mà 0 lazy=warn)
-**Tốc độ tải nội dung (4)**: resources 2 (>8 file JS/CSS=warn) · page_weight 2 (>400 KB=fail, >100 KB=warn)
+- **SEO & hiển thị (12)** · **Chuẩn kỹ thuật (13)** · **Di động & hình ảnh (8)** ·
+  **Tốc độ tải nội dung (4)** · **Marketing & chuyển đổi (8)** · **Tin cậy & minh bạch (4)** ·
+  **Trải nghiệm & truy cập (11)**
+- P0 (Khẩn) dành cho thứ bóp nghẹt khả năng có khách: HTTPS hỏng, robots chặn Google quét,
+  viewport thiếu, trộn nội dung HTTP trên HTTPS. P3 (Khuyến nghị) cho các mục nice-to-have.
 
-## 4. Việc còn lại — tự làm (10 phút)
+## 4. Việc còn lại — bên lề (không thuộc code)
 
-1. Tạo repo GitHub (khuyên đặt tên `webcheck`) → `git remote add origin <link> && git push -u origin main`.
-2. Vercel → Add New → Project → Import repo (không phải cấu hình gì; `api/` tự nhận serverless).
-3. Mở link live: thử 3 kiểu địa chỉ — site tốt, site http, domain chết (kỳ vọng: checklist / kết quả lỗi thân thiện).
-4. Gửi link + `contract.md` cho 3 bạn (ai cũng tự mở `results.html?demo=1` để dựng phần mình khi chưa có mạng).
+1. **Vercel dashboard:** đặt Root Directory = `webcheck` cho project `webcheck` — vì deploy qua
+   Git hiện lấy cả repo làm gốc (gây 404 tại `/`); deploy CLI từ `webcheck/` là cách lấp mép tạm
+   thời. Sau khi đặt, mọi git push sẽ deploy đúng thư mục.
+2. Gửi lại `contract.md` v2.0 cho nhóm (mốc 2–5 cần shape mới).
 
 ## 5. Hợp đồng cho mốc 2–5 (chi tiết đầy đủ trong `webcheck/contract.md`)
 
-- Đọc kết quả duy nhất qua `sessionStorage["webcheck:result"]` (Result shape v1.2: 22 mục — `level` + `suggestion` mỗi mục; `passed` giữ nguyên tương thích).
-- Slot cắm trên results.html: `#score-slot` (mốc 2) · `#ai-slot` (mốc 3) · `#export-slot` (mốc 4) · `#history-slot` (mốc 5).
-- Mỗi mốc thêm file `js/<moc>.js` + 1 thẻ script defer; không đụng `analyze.js`/`main.js`/`api/fetch.mjs` (độc quyền mốc 1).
+- Đọc kết quả qua `WebCheck.docKetQua()` (đọc hộ sessionStorage + gate phiên bản) — không tự parse.
+- Slot cắm trên results.html: `#summary-slot` (mốc 2 — đã cắm `moc2-tongquan.js`) ·
+  `#ai-slot` (mốc 3 — tạm tháo từ v1.3, file khung giữ nguyên) ·
+  `#export-slot` (mốc 4 — đã cắm `moc4-xuat.js`) · `#history-slot` (mốc 5 — trống).
+- Mỗi mốc thêm file `js/<moc>.js` + 1 thẻ script defer; không đụng `analyze.js`/`main.js`/
+  `api/fetch.mjs` (độc quyền mốc 1).
 - Không thêm thư viện khi chưa cả nhóm đồng ý (frontend hiện 0 dependency).
 
 ## 6. Giới hạn khai thật khi demo (chép vào slide)
 
 1. Chỉ soi **HTML tĩnh** — site SPA (nội dung dệt bằng JS) chỉ đo được phần khai báo meta ban đầu.
-2. Site chặn bot (tường lửa) → thông báo lỗi rõ ràng, không treo (đã test với domain chết: trả 502 + thông điệp tiếng Việt).
-3. Điểm /100 chưa có — thuộc mốc 2 (`weight` là gợi ý đã đặt sẵn tổng = 100).
+2. Site chặn bot (tường lửa) → thông báo lỗi rõ ràng, không treo.
+3. Mục **"Không xác định" không phải lỗi** — bộ kiểm chỉ kết luận khi đủ bằng chứng.
+4. **Không chấm điểm, không xếp loại** — mỗi mục nêu Trạng thái + Mức ưu tiên + Bằng chứng;
+   bạn tự quyết việc nào làm trước (P0 → P1 → P2 → P3).
