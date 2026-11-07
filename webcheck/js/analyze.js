@@ -171,7 +171,6 @@ const WebCheck = (function () {
    * Cả 60 ID × 2 tình huống (fail/warn) đều phải có map (test quét đầy đủ).
    */
   const STATUS_WORDS = { pass: 'Đạt', warn: 'Cần cải thiện', fail: 'Chưa đạt', unknown: 'Không xác định' };
-  const STATUS_SHORT = { pass: 'Đạt', warn: 'Cần cải thiện', fail: 'Chưa đạt', unknown: 'Không xác định' };
   const GLYPHS = { pass: '✓', warn: '!', fail: '✕', unknown: '?' };
   const METHOD_WORDS = { 'html': 'HTML tĩnh', 'network': 'Tài nguyên mạng', 'html+network': 'HTML + mạng' };
   const PRIORITY_ORDER = ['P0', 'P1', 'P2', 'P3'];
@@ -252,14 +251,12 @@ const WebCheck = (function () {
   const ellip = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
   const kb = (bytes) => Math.round(bytes / 1024).toLocaleString('vi-VN');
 
-  // Ghép 4 đầu vào thành object check v2.0 — pr là override "đi theo nhánh"
-  // (một tiêu chí có thể khác mức P tùy tình huống; hiện chưa dùng, giữ chỗ cho nhóm sửa).
-  function out(id, level, detail, suggestion, pr) {
+  // Ghép 4 đầu vào thành object check v2.0; mức ưu tiên tra PRIORITY_MAP theo trạng thái.
+  // (một tiêu chí khác P tùy tình huống chỉ cần điều chỉnh trong PRIORITY_MAP, không thêm nhánh)
+  function out(id, level, detail, suggestion) {
     const d = def(id);
     const map = PRIORITY_MAP[id] || {};
-    const priority = pr
-      || (level === 'fail' ? map.fail : level === 'warn' ? map.warn : null)
-      || null;
+    const priority = (level === 'fail' ? map.fail : level === 'warn' ? map.warn : null) || null;
     return {
       id,
       label: d.label,
@@ -1206,7 +1203,7 @@ const WebCheck = (function () {
     }
     return out('inline_styles', 'pass',
       `Chỉ ${n} chỗ dùng style trực tiếp — phần lớn hình thức gom trong file CSS, dễ cập nhật đồng bộ.`,
-      'Giữ nguyên; khối style mới nên dồn vào file CSS chính (trừ CSS ch.getBlock đầu trang cần ưu tiên tải).');
+      'Giữ nguyên; khối style mới nên dồn vào file CSS chính (riêng CSS đầu trang cần sẵn cho hiển thị thì giữ <style> là hợp lệ).');
   }
 
   function checkRenderBlocking(doc) {
@@ -1516,7 +1513,7 @@ const WebCheck = (function () {
     if (!bad.length) {
       return out('table_headers', 'pass',
         `${tables.length} bảng dữ liệu đều có ô tiêu đề (<th>) — các công cụ đọc theo cột-hàng đúng ý bảng.`,
-        'Giữ thói quen này cho bảng mới; dùng <th> theo nghĩa như tốt hơn là dùng style in đậm giả lập tiêu đề.');
+        'Giữ thói quen này cho bảng mới; dùng <th> đúng nghĩa tốt hơn là giả lập tiêu đề bằng style in đậm.');
     }
     const level = bad.length === tables.length ? 'fail' : 'warn';
     return out('table_headers', level,
@@ -1605,7 +1602,7 @@ const WebCheck = (function () {
     if (!media.length) {
       return out('media_autoplay', 'pass',
         'Trang không nhúng video/âm thanh nào.',
-        'Khi thêm video, để chế độ "bấm để phát"; người dùng có nút điều khiển thì mới nhớ trình bày của bạn.');
+        'Khi thêm video, để ở chế độ "bấm để phát" — khách tự quyết định khi nào bật âm thanh.');
     }
     const bad = media.filter((m) =>
       m.getAttribute('autoplay') != null &&
@@ -1834,7 +1831,7 @@ const WebCheck = (function () {
           'Thêm nút "Chỉ đường" gần địa chỉ để khách đi qua khu vực ghé quán dễ hơn; nếu được nhèm thêm bản đồ trực tiếp trên trang.');
       }
     }
-    if (doc.querySelector('address') || bodyText(doc).match(/\d+ (?:l dividing|phố|đường|hẻm|ngõ|quận|phường)/i)) {
+    if (doc.querySelector('address') || bodyText(doc).match(/\d+ (?:phố|đường|hẻm|ngõ|quận|phường)/i)) {
       return out('map_embed', 'warn',
         'Trang có địa chỉ cửa hàng nhưng chưa có bản đồ/đường dẫn chỉ đường — khách phải tự tìm bạn trên bản đồ, thuận tiện hơn nếu bấm được ngay.',
         'Nhúng khối Google Maps (kèm title cho iframe) hoặc đặt nút "Xem bản đồ" trỏ tới vị trí cửa hàng.');
@@ -2230,7 +2227,7 @@ const WebCheck = (function () {
   // Nạp Result cho mốc 2–5 (và results.js): ?demo=1 → Result mẫu mới; ngược lại
   // đọc sessionStorage["webcheck:result"]. v2.0: CHỈ nhận Result đúng phiên bản —
   // kết quả cũ v1.2/v1.3 (không có status/priority) bị từ chối và trả null, nơi gọi
-  // tự hiện trạng thái "kết quả ngôn ngữ cũ, cần kiểm tra lại trang".
+  // tự hiện thông báo "kết quả phiên bản cũ, hãy kiểm tra lại trang".
   function docKetQua() {
     try {
       if (new URLSearchParams(location.search).has('demo')) {

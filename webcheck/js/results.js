@@ -62,7 +62,7 @@
     const notice = document.getElementById('notice');
     notice.textContent =
       'Trang trả về mã HTTP ' + result.statusCode +
-      ' — nội dung kiểm tra dưới đây có thể không trọn vẹn kết quả như trang hoạt động bình thường.';
+      ' — nội dung kiểm tra dưới đây có thể không trọn vẹn như khi trang hoạt động bình thường.';
     notice.hidden = false;
   }
 

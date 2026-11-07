@@ -84,24 +84,31 @@
     }
     L.push('');
 
-    // Chi tiết từng hạng mục: theo nhóm (đúng thứ tự DEFS), trong nhóm sắp P0→P3.
+    // Chi tiết từng hạng mục: nhóm theo đúng thứ tự DEFS (WebCheck.GROUPS), trong
+    // nhóm sắp theo mức ưu tiên (sortChecks). Nhóm lạ ngoài bảng (Result dựng tay)
+    // thêm ở cuối theo lần xuất hiện — không ghép lẫn, không in lặp header.
     L.push(`CHI TIẾT TỪNG HẠNG MỤC (${checks.length} mục)`);
     L.push('='.repeat(52));
-    let groupCur = '';
-    for (const c of sortChecks(checks)) {
-      if (c.group !== groupCur) {
-        groupCur = c.group;
-        L.push(`[${groupCur}]`);
+    const grouped = new Map();
+    for (const c of checks) {
+      if (!grouped.has(c.group)) grouped.set(c.group, []);
+      grouped.get(c.group).push(c);
+    }
+    const groupOrder = [...WebCheck.GROUPS].filter((g) => grouped.has(g));
+    for (const g of grouped.keys()) if (!groupOrder.includes(g)) groupOrder.push(g);
+    for (const g of groupOrder) {
+      L.push(`[${g}]`);
+      for (const c of sortChecks(grouped.get(g))) {
+        L.push(`  ${tagOf(c)} ${c.label}`);
+        if (c.detail) L.push(`      Bằng chứng   : ${c.detail}`);
+        if (c.status === 'warn' || c.status === 'fail') {
+          if (c.impact) L.push(`      Tác động     : ${c.impact}`);
+          if (c.suggestion) L.push(`      Việc cần làm : ${c.suggestion}`);
+        } else if (c.suggestion) {
+          L.push(`      Giữ hướng    : ${c.suggestion}`);
+        }
+        L.push('');
       }
-      L.push(`  ${tagOf(c)} ${c.label}`);
-      if (c.detail) L.push(`      Bằng chứng   : ${c.detail}`);
-      if (c.status === 'warn' || c.status === 'fail') {
-        if (c.impact) L.push(`      Tác động     : ${c.impact}`);
-        if (c.suggestion) L.push(`      Việc cần làm : ${c.suggestion}`);
-      } else if (c.suggestion) {
-        L.push(`      Giữ hướng    : ${c.suggestion}`);
-      }
-      L.push('');
     }
 
     L.push('GIỚI HẠN CỦA BÁO CÁO');
