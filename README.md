@@ -1,0 +1,2 @@
+# vibecoding
+mục q
