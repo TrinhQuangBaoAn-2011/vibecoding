@@ -1,5 +1,9 @@
 node_modules/
 .vercel/
-# env: bản ghi cấu hình cục bộ — nhẹ dạ đẩy lên git (repo master từng commit
+# env: cấu hình cục bộ — không commit môi trường thật (repo master từng commit
 # server/.env không có key thật). Môi trường thật lấy biến ở dashboard Vercel.
 .env
+.env.local
+.env.*.local
+# log cục bộ (*.log: server/backend.log...)
+*.log
