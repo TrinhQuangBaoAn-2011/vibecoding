@@ -1,10 +1,11 @@
 'use strict';
 /*
  * MỘC 4 — Xuất báo cáo text (v2.0)
- * Cắm vào #export-slot (results.html): dựng báo cáo thuần text từ Result v2.0
- * ({status, priority, detail, impact, suggestion}) rồi cho 3 nút: sao chép / tải .txt / xem trước.
- * KHÔNG ĐIỂM: v2.0 bỏ hoàn toàn điểm /100 — báo cáo sắp theo mức ưu tiên P0→P3,
- * dùng đúng bảng từ của analyze.js (WebCheck.STATUS_WORDS / PRIORITY_WORDS).
+ * Cắm vào #export-slot (results.html): báo cáo như thư gửi chủ doanh nghiệp —
+ * mở đầu "trang đang ở đâu" + 5 việc đáng làm đầu tiên (P0→…, lời khuyên ngắn),
+ * rồi chi tiết từng hạng mục theo nhóm; 3 nút: sao chép / tải .txt / xem trước.
+ * KHÔNG ĐIỂM: v2.0 bỏ hoàn toàn điểm /100 — dùng đúng bảng từ của analyze.js
+ * (WebCheck.STATUS_WORDS / PRIORITY_WORDS).
  * KHÔNG AI: không nhận xét tự động (contract.md mục 8 — moc3-ai.js là mốc riêng).
  */
 (function () {
@@ -53,35 +54,55 @@
     L.push(`Phiên bản bộ kiểm   : WebCheck v${result.version || '—'} (${WebCheck.VERSION})`);
     L.push('');
 
-    // Tổng quan: đếm 4 trạng thái — không có điểm, không xếp loại.
+    // Đếm 4 trạng thái — cơ sở cho phần mở đầu và bảng tổng quan (không có điểm).
     const counts = { pass: 0, warn: 0, fail: 0, unknown: 0 };
     for (const c of checks) if (counts[c.status] != null) counts[c.status] += 1;
-    L.push(`TỔNG QUAN (${checks.length} hạng mục)`);
+
+    // Thứ tự "việc cần làm": ưu tiên trước (P0→P3), cùng mức thì Chưa đạt trước Cần cải thiện.
+    const todoCmp = (a, b) =>
+      prRank(a) - prRank(b) ||
+      (a.status === b.status ? 0 : a.status === 'fail' ? -1 : 1) ||
+      a.id.localeCompare(b.id);
+    // Rút ngắn lời khuyên để mỗi dòng việc đầu tiên đọc trong một cái nhìn.
+    const short = (s) => (s.length > 108 ? s.slice(0, 105) + '…' : s);
+
+    // Phần mở đầu kiểu thư: "trang của bạn đang ở đâu" — kể từ số liệu, không chấm điểm.
+    L.push('TRANG CỦA BẠN ĐANG Ở ĐÂU');
+    L.push('-'.repeat(52));
+    L.push(`Qua ${checks.length} hạng mục nền móng, ${safeHost} hiện có: ` +
+      `${counts.pass} Đạt, ${counts.warn} Cần cải thiện, ${counts.fail} Chưa đạt` +
+      (counts.unknown ? `, ${counts.unknown} Không xác định (chưa đủ bằng chứng — không phải lỗi)` : '') + '.');
+    const todos = checks.filter((c) => c.status === 'fail' || c.status === 'warn').sort(todoCmp).slice(0, 5);
+    if (todos.length) {
+      const first = todos[0];
+      const pr = first.priority ? `${first.priority} — ${PRIORITY[first.priority]}` : STATUS[first.status];
+      L.push(`Việc nên bắt đầu: "${first.label}" [${pr}]`);
+      if (first.suggestion) L.push(`Hướng làm: ${short(first.suggestion)}`);
+    } else {
+      L.push('Chưa có mục nào đang chưa ổn — nền móng trang ổn định, giữ hướng như phần chi tiết dưới đây.');
+    }
+    L.push('');
+
+    // 5 việc đáng làm đầu tiên: P0 → P1 → P2… (mỗi dòng 1 việc + hướng khắc phục ngắn).
+    L.push('5 VIỆC ĐÁNG LÀM ĐẦU TIÊN');
+    L.push('-'.repeat(52));
+    if (!todos.length) {
+      L.push('  (Không có mục Chưa đạt / Cần cải thiện nào — danh sách trống là tin vui.)');
+    }
+    todos.forEach((c, i) => {
+      const pr = c.priority ? `${c.priority} — ${PRIORITY[c.priority]}` : STATUS[c.status];
+      L.push(`  ${i + 1}. [${pr}] ${c.label}${c.suggestion ? ` → ${short(c.suggestion)}` : ''}`);
+    });
+    L.push('');
+
+    // Bảng đếm 4 trạng thái (tham khảo nhanh — unknown không phải lỗi).
     const pad = (s, w) => s + ' '.repeat(Math.max(0, w - s.length));
+    L.push(`TỔNG QUAN (${checks.length} hạng mục)`);
     L.push(`  ${pad(STATUS.pass, 8)}: ${counts.pass}`);
     L.push(`  ${pad(STATUS.warn, 8)}: ${counts.warn}`);
     L.push(`  ${pad(STATUS.fail, 8)}: ${counts.fail}`);
     L.push(`  ${pad(STATUS.unknown, 8)}: ${counts.unknown}` +
       (counts.unknown ? '  (không phải lỗi — chưa đủ bằng chứng để kết luận)' : ''));
-    L.push('');
-
-    // Việc cần làm trước: P0 rồi P1 (fail/warn) — khuyến khích xử lý theo thứ tự.
-    const pronto = sortChecks(checks.filter(
-      (c) => (c.priority === 'P0' || c.priority === 'P1') && (c.status === 'fail' || c.status === 'warn'),
-    ));
-    L.push('CẦN LÀM TRƯỚC (P0 — Khẩn, P1 — Cao)');
-    L.push('-'.repeat(52));
-    if (!pronto.length) {
-      L.push('  Không có mục nào ở mức P0/P1 cần xử lý trước. Hãy xem phần chi tiết');
-      L.push('  để chọn việc theo mức P2 (Trung bình) và P3 (Khuyến nghị).');
-    }
-    for (const c of pronto) {
-      L.push(`  ${tagOf(c)} ${c.label}`);
-      if (c.detail) L.push(`      Bằng chứng   : ${c.detail}`);
-      if (c.impact) L.push(`      Tác động     : ${c.impact}`);
-      if (c.suggestion) L.push(`      Việc cần làm : ${c.suggestion}`);
-      L.push('');
-    }
     L.push('');
 
     // Chi tiết từng hạng mục: nhóm theo đúng thứ tự DEFS (WebCheck.GROUPS), trong
@@ -126,16 +147,16 @@
     return L.join('\n');
   }
 
-  const text = buildReport();
   const safeHost = (() => {
     try { return new URL(result.finalUrl || result.url).hostname.replace(/[^\w.-]/g, ''); }
     catch { return 'website'; }
   })();
+  const text = buildReport();
 
   SLOT.innerHTML = `
   <div class="export">
     <h2 class="slot-title">Tải / sao chép báo cáo</h2>
-    <p class="slot-help">Bản text đầy đủ: tổng quan 4 trạng thái, phần "Cần làm trước" (P0/P1) và từng hạng mục theo nhóm (trạng thái, mức ưu tiên, bằng chứng, việc cần làm).</p>
+    <p class="slot-help">Bản text như thư gửi khách: mở đầu "trang đang ở đâu", 5 việc đáng làm đầu tiên, tổng quan 4 trạng thái rồi chi tiết từng hạng mục theo nhóm.</p>
     <div class="export-actions">
       <button id="btn-report-copy" class="button" type="button">Sao chép báo cáo</button>
       <button id="btn-report-save" class="button" type="button">Tải tệp .txt</button>
