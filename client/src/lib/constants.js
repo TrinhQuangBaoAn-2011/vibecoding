@@ -229,3 +229,17 @@ export const GROUP_ICONS = {
   'Tin cậy & minh bạch': ShieldCheckIcon,
   'Trải nghiệm & truy cập': SlidersHorizontalIcon,
 };
+
+/* ── Câu hỏi "thân thiện" theo nhóm — nội dung ghép từ MỤC 2 của bạn nhóm
+ * (KhanhThy — github.com/KhanhThy249/module-nh-gi-ki-m-tra-web). Đóng góp vào
+ * đây là 7 câu hỏi đời thường cho mỗi nhóm tiêu chí; chỉ là lớp trình bày,
+ * không đổi dữ liệu/bảng tiêu chí của engine (quy tắc: một nguồn sự thật). */
+export const GROUP_QUESTIONS = Object.freeze({
+  'SEO & hiển thị': 'Google có tìm thấy, hiểu và hiển thị website đẹp không?',
+  'Chuẩn kỹ thuật': 'Website có được xây dựng đúng chuẩn và an toàn không?',
+  'Di động & hình ảnh': 'Xem trên điện thoại có tốt, hình ảnh có được tối ưu không?',
+  'Tốc độ tải nội dung': 'Website có tải nhanh không?',
+  'Marketing & chuyển đổi': 'Website có giúp doanh nghiệp có thêm khách hàng không?',
+  'Tin cậy & minh bạch': 'Khách có đủ thông tin để tin tưởng doanh nghiệp không?',
+  'Trải nghiệm & truy cập': 'Mọi người, kể cả người khuyết tật, có dùng website dễ dàng không?',
+});

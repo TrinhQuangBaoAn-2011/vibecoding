@@ -19,8 +19,6 @@ import { AnalysisReport } from '../components/AnalysisReport.jsx';
 import { useAnalyze } from '../hooks/useAnalyze.js';
 import { useHistory } from '../context/HistoryContext.jsx';
 import { buildComparison } from '../lib/comparison.js';
-import { initPart3, Part3Review } from '../lib/part3Review.js';
-import { WEBCHECK } from '../lib/webcheckClient.js';
 
 const DELIVERABLES = [
   { icon: TrendingUp, title: 'Điểm tổng kết trên thang 100', description: 'Chuẩn hóa sau khi loại tiêu chí Không xác định hoặc Không áp dụng.' },
@@ -97,98 +95,13 @@ export function Analyze() {
     run(target);
   };
 
-  // Initialize Part 3 Review
-  useEffect(() => {
-    const container = document.querySelector('#part3-review-container');
-    if (!container) return undefined;
-    const part3 = initPart3(container, {
-      endpoint: '/api/ai-review',
-      model: 'gpt-4o-mini',
-    });
-
-    if (analysis && review) {
-      // Nhận xét đã có từ backend (AI hoặc bộ quy tắc) → hiển thị trực tiếp
-      // trên panel Phần 3, không gọi lại API để tránh tạo thêm lượt AI.
-      part3.analyzeFromReport({
-        url: analysis.requestedUrl || analysis.url || analysis.finalUrl,
-        analysis,
-        review,
-      });
-    } else if (analysis) {
-      part3.renderWaiting('Điểm đã hoàn tất — nhận xét đang được tổng hợp…');
-    } else {
-      part3.renderIdle();
-    }
-
-    const onComplete = (e) => console.debug('Part 3 analysis complete', e.detail);
-    const onError = (e) => console.debug('Part 3 analysis error', e.detail);
-    container.addEventListener('part3:complete', onComplete);
-    container.addEventListener('part3:error', onError);
-    return () => {
-      container.removeEventListener('part3:complete', onComplete);
-      container.removeEventListener('part3:error', onError);
-      part3.stopStatusRotation?.();
-    };
-  }, [analysis, review]);
-
-  // Initialize WebCheck client-side checking
-  useEffect(() => {
-    const webcheckContainer = document.querySelector('#webcheck-checklist-container');
-    if (!webcheckContainer || !initialUrl) return;
-    
-    // Normalize URL
-    let normalizedUrl = initialUrl;
-    try {
-      if (!/^https?:\/\//i.test(normalizedUrl)) normalizedUrl = 'https://' + normalizedUrl;
-    } catch {
-      // Invalid URL, skip WebCheck
-      return;
-    }
-    
-    // Set busy state
-    const button = document.querySelector('button[type="submit"]');
-    if (button) button.disabled = true;
-    
-    fetch('/api/fetch?url=' + encodeURIComponent(normalizedUrl) + '&soft=1', {
-      headers: { Accept: 'application/json' },
-    })
-    .then((res) => {
-      if (!res.ok) throw new Error('Network response was not ok');
-      return res.json();
-    })
-    .then((data) => {
-      // Run WebCheck client-side analysis
-      const result = WEBCHECK.runChecks(data.html, {
-        inputUrl: normalizedUrl,
-        finalUrl: data.finalUrl || normalizedUrl,
-        statusCode: data.statusCode,
-        elapsedMs: data.elapsedMs,
-      });
-      
-      // Render checklist
-      WEBCHECK.renderChecklist(result, '#webcheck-checklist-container');
-      
-      // Show summary
-      const summary = WEBCHECK.getSummary(result);
-      const summaryEl = document.querySelector('#webcheck-summary');
-      if (summaryEl) {
-        summaryEl.innerHTML = `
-          <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50/30 text-sm text-emerald-700">
-            <strong>Tổng kết WebCheck:</strong> ${summary.passed}/${summary.total} đạt,
-            ${summary.warns}/${summary.total} cảnh báo, ${summary.fails}/${summary.total} chưa đạt
-          </div>
-        `;
-      }
-      
-      // Re-enable button
-      if (button) button.disabled = false;
-    })
-    .catch((err) => {
-      console.error('WebCheck analysis error:', err);
-      if (button) button.disabled = false;
-    });
-  }, [initialUrl]);
-
+  // (Đã gỡ sau audit "7 quy tắc không làm trùng" — 09/11/2026)
+  // 1) khối quét nhanh client-side qua /api/fetch + WEBCHECK.runChecks 22 mục
+  //    → vi phạm quy tắc "Chỉ Backend quét": Backend quét duy nhất bằng engine
+  //    60 mục v2.0 rồi trả JSON, Frontend chỉ hiển thị.
+  // 2) panel legacy Part 3 (part3Review.js) → trùng panel AiConsultant; nhận xét
+  //    AI chỉ có một đường duy nhất từ useAnalyze(/api/ai-review) hiển thị qua
+  //    AnalysisReport. File lib/* giữ làm tài sản nhóm, không cắm vào luồng app.
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -343,13 +256,12 @@ export function Analyze() {
           </section>
 
           <section className="card p-5 sm:p-6">
-            <h2 className="text-base font-bold text-ink-900">Phần 3: AI đánh giá & nhận xét</h2>
+            <h2 className="text-base font-bold text-ink-900">Ba-rem chấm điểm WEBCHECK AI</h2>
             <p className="mt-1 text-sm leading-relaxed text-ink-500">
-              Dữ liệu quét website sẽ được gửi tới AI để phân tích 3 điểm mạnh và 3 điểm cần cải thiện.
+              Bộ máy v2.0 chấm đủ 60 tiêu chí theo trọng số mức ưu tiên: P0 đắt nhất (6 điểm thô) →
+              P1 (4) → P2 (2) → P3 (1), chuẩn hóa về thang 100 và loại tiêu chí Không xác định khỏi
+              mẫu số. Báo cáo đầy đủ kèm bằng chứng hiển thị ngay sau khi phân tích hoàn tất.
             </p>
-            <div id="part3-review-container" className="mt-4 min-h-[160px] rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
-              <p className="text-sm text-indigo-600">Đang khởi tạo panel Phần 3…</p>
-            </div>
           </section>
         </div>
       )}
@@ -361,29 +273,6 @@ export function Analyze() {
         </div>
       )}
 
-      {/* WebCheck client-side quick check */}
-      <section className="grid gap-5 lg:grid-cols-2">
-        <section className="card p-5 sm:p-6">
-          <h2 className="text-base font-bold text-ink-900">Phần 1: Kiểm tra nhanh ngay trên trình duyệt</h2>
-          <p className="mt-1 text-sm leading-relaxed text-ink-500">
-            60 hạng mục nền tảng chấm nhanh theo 4 trạng thái (chưa tính điểm tổng): tiêu đề, mô tả,
-            viewport, favicon, hình ảnh alt, liên kết, robots.txt, sitemap.xml và tốc độ tải.
-          </p>
-          <div id="webcheck-checklist-container" className="mt-4 min-h-[120px] rounded-xl border border-indigo-200 bg-indigo-50/30 p-4">
-            <p className="text-sm text-indigo-600">Đang kiểm tra URL — vui lòng đợi trong giây lát…</p>
-          </div>
-          <div id="webcheck-summary" className="mt-3 rounded-xl border border-indigo-200 bg-indigo-50/30 p-2 text-sm text-indigo-600"></div>
-        </section>
-
-        <section className="card p-5 sm:p-6">
-          <h2 className="text-base font-bold text-ink-900">Phần 2: Ba-rem chấm điểm WEBCHECK AI</h2>
-          <p className="mt-1 text-sm leading-relaxed text-ink-500">
-            Bộ máy v2.0 chấm đủ 60 tiêu chí theo trọng số mức ưu tiên: P0 đắt nhất (6 điểm thô) →
-            P1 (4) → P2 (2) → P3 (1), chuẩn hóa về thang 100 và loại tiêu chí Không xác định khỏi
-            mẫu số. Báo cáo đầy đủ kèm bằng chứng hiển thị ngay sau khi phân tích hoàn tất.
-          </p>
-        </section>
-      </section>
     </div>
   );
 }

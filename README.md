@@ -74,3 +74,49 @@ backend (Express, Vercel 1 lambda) — mỗi "module" là một file đã có th
 | Module 4: AI Service | `server/lib/aiReview.js` — gửi shape gọn cho AI, prompt tiếng Việt; không có key thì tự quay về bộ quy tắc (minh bạch, không gạt lỗi) | `/api/health` báo chế độ `"rules-fallback"` khi chưa có key |
 | Module 5: Response Formatter | `analyzer.js` (map 60 item + page meta) + `routes/analyze.js` trả JSON thống nhất | 1 phân tích → JSON có đủ criteria[]/score/counts |
 | Storage: không DB, localStorage MVP | đúng như vậy — server không database (chỉ cache ẩn RAM TTL 30'), lịch sử = localStorage phía client | lịch sử được lưu cục bộ khi mặc sức chờ trong session |
+
+## Mục 2 của bạn nhóm (KhanhThy — module kiểm tra web): đánh giá + những gì đã ghép
+
+Repo: `github.com/KhanhThy249/module-nh-gi-ki-m-tra-web` — module chấm điểm website hoàn chỉnh
+(Node 20, không cần thư viện): fetch trang (chặn địa chỉ nội bộ, ≤5 redirect, 10s, 2MB,
+robots.txt + sitemap) → parse HTML → chấm **60 tiêu chí / 7 nhóm / 100 điểm** → API
+`POST /api/analyze` + server + giao diện riêng, 37 test, có bằng chứng từng mục.
+
+**Kết luận: nội dung ổn, đóng gói cần sửa 1 chút phía bạn ấy** (nhắc bằng tốt ý):
+
+- ✅ Logic chấm sống tốt: `score.mjs` tách bạch status → điểm, `pointsFor`, `gradeOf` (Xuất sắc/Khá/
+  Trung bình/Cần cải thiện gấp); tiêu chí 1 điểm chỉ Đạt/Chưa đạt — tất cả khớp cùng hướng với
+  engine 60 mục v2.0 của nhóm; cùng 7 nhóm tiêu chí.
+- ✅ fetchPage có đủ an toàn cơ bản: block IP nội bộ, giới hạn thời gian/dung lượng — đúng tinh
+  thần Server của nhóm.
+- ⚠️ Trên GitHub, repo để file **phẳng ở root** nhưng file test import `../lib/…` (kiểu cấu trúc
+  `lib/` + `tests/`) → `npm test` nổ `ERR_MODULE_NOT_FOUND` ngay khi chạy. Sửa nhanh nhất phía
+  bạn ấy: tạo `lib/` + `tests/` đúng như README mô tả rồi `git mv` code vào `lib/` (hoặc đổi
+  import trong test thành `./fetchPage.mjs`).
+
+**Cách ghép vào web này (đúng 7 quy tắc chống trùng — không cắm API thứ hai):** có cùng engine
+60 mục ở Backend nên cắm thêm server/API riêng của bạn cụ sẽ sinh 2 đường quét + 2 shape trường
+(vi phạm quy tắc). Vì vậy chỉ ghép những phần **không trùng** của bạn cụ:
+
+| Đóng góp từ mục 2 | Đã ghép vào | Ở đâu |
+|---|---|---|
+| 7 câu hỏi "thân thiện" cho từng nhóm tiêu chí | header từng nhóm trong bảng 60 tiêu chí | `client/src/lib/constants.js` → `GROUP_QUESTIONS`; hiển thị trong `CriteriaList.jsx` |
+| Ý tưởng **xếp loại** điểm /100 (Xuất sắc→Cần gấp) | App đã có sẵn tương đương: `classification` (Tốt/Khá/Trung bình/Cần cải thiện) tính ở `server/lib/scoring.js`, hiển thị chip "Xếp loại" trong `ScoreSummary` | giữ bản của nhóm (một API chung) |
+
+Sản phẩm "mục 1" (checklist 22 mục `webcheckClient.js`) và khung "Part 3" (`part3Review.js`) của
+bạn cụ vẫn giữ trong repo làm tài sản nhóm, nhưng **không cắm** vào luồng app sau audit dưới đây.
+
+## Đối chiếu 7 quy tắc "không nên làm trùng" (audit 09/11/2026)
+
+| Quy tắc | Kết luận | Kiểm chứng + đã xử lý |
+|---|---|---|
+| Frontend + Backend cùng quét → **Chỉ Backend quét** | 🔴 đã vi phạm → Đã sửa | trang Analyze tự gọi `/api/fetch` + chạy engine 22 mục ngay trong trình duyệt — gỡ sạch khối này; client `grep '/api/fetch'` = 0, chỉ Backend quét (`server/lib/fetcher.js`) |
+| AI + Backend cùng tính điểm → **Chỉ Backend tính điểm** | 🟢 tuân thủ | điểm chỉ sinh ở `server/lib/scoring.js` (+ `webcheckEngine.js`); UI chỉ đọc `analysis.score` (ScoreSummary/RoadmapPanel chỉ sắp xếp để hiển thị) |
+| AI tự tạo checklist mới → **AI chỉ nhận xét trên checklist có sẵn** | 🟢 tuân thủ | `aiReview.js` chỉ nhận `criteria[]` có sẵn → strengths/improvements; không tự sinh mục (legacy panel có prompt khác cũng đã gỡ khỏi app) |
+| Frontend + Backend cùng lưu lịch sử → **MVP chỉ localStorage** | 🟢 tuân thủ | lịch sử = `HistoryContext` + `storage.js`; server chỉ có RAM-cache TTL 30' để đỡ quét lại, không ghi đĩa/database |
+| AI tạo báo cáo + Frontend tạo báo cáo riêng → **AI trả nhận xét, Frontend ghép báo cáo** | 🔴 trùng panel → Đã sửa | trang Analyze từng có 2 đường AI (panel Part 3 legacy + `AiConsultant`) — gỡ panel legacy khỏi app; giờ "một luồng: useAnalyze → AnalysisReport" |
+| Nhiều thành viên tạo API riêng → **Một API thống nhất** | 🟢 tuân thủ | app chỉ gọi `/api/analyze(+/stream)` · `/api/ai-review` · `/api/health`; `/api/fetch` chỉ còn phục vụ máy chấm QA `/webcheck/…` theo hợp đồng riêng |
+| Nhiều người tự đặt tên trường → **Một API contract chung** | 🟢 tuân thủ | shape JSON chốt ở contract v3.0; client không rename trường server trả về (catalog sinh từ engine qua `scripts/sync-criteria.mjs`) |
+
+Sau audit, trình duyệt QA: example.com **71/100**, 60 mục, không lỗi console, **0** call `/api/fetch`,
+`#webcheck-checklist-container` + `#part3-review-container` không còn trong DOM; server tests 5/5.

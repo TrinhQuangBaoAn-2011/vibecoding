@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronRight, ListChecks } from 'lucide-react';
-import { getPriorityMeta, getStatusMeta } from '../lib/constants.js';
+import { GROUP_ICONS, GROUP_QUESTIONS, getPriorityMeta, getStatusMeta } from '../lib/constants.js';
 import { StatusBadge, StatusIcon } from './StatusBadge.jsx';
 import { CriterionModal } from './CriterionModal.jsx';
 
@@ -23,6 +23,73 @@ function matchesFilter(criterion, filter) {
   return criterion.status === filter;
 }
 
+/* Một dòng tiêu chí = một nút mở modal chi tiết (tách ra để dùng lại cho mọi nhóm). */
+function CriterionRow({ criterion, onSelect }) {
+  const meta = getStatusMeta(criterion.status);
+  const priority = getPriorityMeta(criterion.criticality || criterion.priority);
+  const excluded = ['na', 'untestable'].includes(criterion.status);
+  const max = Number(criterion.maxPoints) || 0;
+  const points = Number(criterion.points) || 0;
+  const width = excluded || max <= 0 ? 0 : Math.max(2, Math.min(100, (points / max) * 100));
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(criterion)}
+      className="group flex w-full items-start gap-3 px-4 py-3.5 text-left transition hover:bg-ink-50/80 sm:items-center sm:px-6"
+    >
+      <span className="mt-0.5 shrink-0 sm:mt-0">
+        <StatusIcon status={criterion.status} className="h-5 w-5" />
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-sm font-semibold text-ink-900">{criterion.name}</span>
+          <StatusBadge
+            status={criterion.status}
+            label={criterion.statusLabel}
+            showIcon={false}
+            className="!px-2 !py-0.5 !text-[10px]"
+          />
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ring-1 ring-inset ${priority.badge}`}
+            title={`Trọng số ${priority.weight} điểm thô — mức ưu tiên ${priority.label}`}
+          >
+            {criterion.criticality || criterion.priority || 'P2'} · {priority.weight}đ
+          </span>
+          {excluded && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
+              Không tính vào điểm
+            </span>
+          )}
+        </span>
+        <span className="mt-1 hidden max-w-2xl truncate text-xs text-ink-500 sm:block">
+          {criterion.message}
+        </span>
+        <span className="mt-2 flex items-center gap-2">
+          <span className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-ink-100">
+            <span
+              className={`block h-full rounded-full ${meta.solid}`}
+              style={{ width: `${width}%` }}
+            />
+          </span>
+          <span className="shrink-0 text-[10px] font-semibold text-ink-400 tabular">
+            {excluded ? '—' : `${formatPoints(points)}/${max}`}
+          </span>
+        </span>
+      </span>
+
+      <span className="flex shrink-0 items-center gap-2 self-center">
+        <span className={`text-sm font-bold tabular ${excluded ? 'text-ink-400' : meta.text}`}>
+          {excluded ? '—' : formatPoints(points)}
+          <span className="text-xs font-semibold text-ink-400">/{max}</span>
+        </span>
+        <ChevronRight className="h-4 w-4 text-ink-300 transition group-hover:translate-x-0.5 group-hover:text-ink-500" />
+      </span>
+    </button>
+  );
+}
+
 export function CriteriaList({ criteria = [] }) {
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState(null);
@@ -42,6 +109,18 @@ export function CriteriaList({ criteria = [] }) {
     () => criteria.filter((criterion) => matchesFilter(criterion, filter)),
     [criteria, filter],
   );
+
+  /* Gom các dòng đang hiển thị theo nhóm (giữ thứ tự dữ liệu trả về từ server).
+   * Mỗi nhóm có 1 dòng tiêu đề kèm "câu hỏi thân thiện" — nội dung ghép từ mục 2
+   * của bạn nhóm (KhanhThy) qua GROUP_QUESTIONS trong lib/constants.js. */
+  const sections = useMemo(() => {
+    const byKey = new Map();
+    for (const criterion of visible) {
+      if (!byKey.has(criterion.group)) byKey.set(criterion.group, []);
+      byKey.get(criterion.group).push(criterion);
+    }
+    return Array.from(byKey, ([group, items]) => ({ group, items }));
+  }, [visible]);
 
   return (
     <section className="card overflow-hidden">
@@ -87,70 +166,32 @@ export function CriteriaList({ criteria = [] }) {
       </div>
 
       <div className="divide-y divide-ink-100">
-        {visible.map((criterion) => {
-          const meta = getStatusMeta(criterion.status);
-          const priority = getPriorityMeta(criterion.criticality || criterion.priority);
-          const excluded = ['na', 'untestable'].includes(criterion.status);
-          const max = Number(criterion.maxPoints) || 0;
-          const points = Number(criterion.points) || 0;
-          const width = excluded || max <= 0 ? 0 : Math.max(2, Math.min(100, (points / max) * 100));
-
+        {sections.map(({ group: groupName, items }) => {
+          const GroupIcon = GROUP_ICONS[groupName];
+          const passCount = items.filter((c) => c.status === 'pass').length;
+          const question = GROUP_QUESTIONS[groupName];
           return (
-            <button
-              key={criterion.id}
-              type="button"
-              onClick={() => setSelected(criterion)}
-              className="group flex w-full items-start gap-3 px-4 py-3.5 text-left transition hover:bg-ink-50/80 sm:items-center sm:px-6"
-            >
-              <span className="mt-0.5 shrink-0 sm:mt-0">
-                <StatusIcon status={criterion.status} className="h-5 w-5" />
-              </span>
-
-              <span className="min-w-0 flex-1">
-                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="text-sm font-semibold text-ink-900">{criterion.name}</span>
-                  <StatusBadge
-                    status={criterion.status}
-                    label={criterion.statusLabel}
-                    showIcon={false}
-                    className="!px-2 !py-0.5 !text-[10px]"
-                  />
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ring-1 ring-inset ${priority.badge}`}
-                    title={`Trọng số ${priority.weight} điểm thô — mức ưu tiên ${priority.label}`}
-                  >
-                    {criterion.criticality || criterion.priority || 'P2'} · {priority.weight}đ
+            <div key={groupName}>
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 bg-ink-50/80 px-4 py-2.5 sm:px-6">
+                {GroupIcon ? <GroupIcon className="h-4 w-4 shrink-0 text-brand-600" /> : null}
+                <span className="text-xs font-bold uppercase tracking-[0.12em] text-ink-700">
+                  {groupName}
+                </span>
+                <span className="tabular shrink-0 text-[10px] font-semibold text-ink-400">
+                  {passCount}/{items.length} đạt
+                </span>
+                {question && (
+                  <span className="basis-full pl-[26px] text-[11px] leading-relaxed text-ink-500">
+                    “{question}”
                   </span>
-                  {excluded && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
-                      Không tính vào điểm
-                    </span>
-                  )}
-                </span>
-                <span className="mt-1 hidden max-w-2xl truncate text-xs text-ink-500 sm:block">
-                  {criterion.message}
-                </span>
-                <span className="mt-2 flex items-center gap-2">
-                  <span className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-ink-100">
-                    <span
-                      className={`block h-full rounded-full ${meta.solid}`}
-                      style={{ width: `${width}%` }}
-                    />
-                  </span>
-                  <span className="shrink-0 text-[10px] font-semibold text-ink-400 tabular">
-                    {excluded ? '—' : `${formatPoints(points)}/${max}`}
-                  </span>
-                </span>
-              </span>
-
-              <span className="flex shrink-0 items-center gap-2 self-center">
-                <span className={`text-sm font-bold tabular ${excluded ? 'text-ink-400' : meta.text}`}>
-                  {excluded ? '—' : formatPoints(points)}
-                  <span className="text-xs font-semibold text-ink-400">/{max}</span>
-                </span>
-                <ChevronRight className="h-4 w-4 text-ink-300 transition group-hover:translate-x-0.5 group-hover:text-ink-500" />
-              </span>
-            </button>
+                )}
+              </div>
+              <div className="divide-y divide-ink-100">
+                {items.map((criterion) => (
+                  <CriterionRow key={criterion.id} criterion={criterion} onSelect={setSelected} />
+                ))}
+              </div>
+            </div>
           );
         })}
 
