@@ -1,12 +1,19 @@
 // WebCheck Client Module - Client-side website analysis
 // Integrates with WEBCheck AI backend
 
+/* Hằng render dùng chung mức module — renderChecklist chạy ngoài runChecks nên
+ * không thấy bản cục bộ bên trong; giữ nhãn/ký hiệu khớp bản trong runChecks. */
+const GLYPHS = { pass: '✓', warn: '!', fail: '✕', unknown: '?' };
+const LEVEL_WORDS = { pass: 'Đạt', warn: 'Cảnh báo', fail: 'Chưa đạt', unknown: 'Không rõ' };
+
 const WEBCHECK = {
   // Run checks on HTML content
-  runChecks(html, meta = {}) {
-    const parseDoc = typeof DOMParser !== 'undefined'
-      ? (h) => new DOMParser().parseFromString(h, 'text/html')
-      : null;
+  // parseDoc (tùy chọn): bộ parser HTML dùng khi chạy ngoài trình duyệt (Node/linkedom).
+  runChecks(html, meta = {}, parseDocInjected) {
+    const parseDoc = parseDocInjected
+      || (typeof DOMParser !== 'undefined'
+        ? (h) => new DOMParser().parseFromString(h, 'text/html')
+        : null);
 
     if (!parseDoc) throw new Error('DOMParser not available');
 
@@ -468,6 +475,101 @@ const WEBCHECK = {
           : 'Bổ sung dòng "Sitemap: ten-mien.vn/sitemap.xml" để máy tìm kiếm tìm sơ đồ trang nhanh hơn.');
     }
 
+    // Port nguyên văn từ webcheck/js/analyze.js (v2.0) — 2 hàm bị mất khi adapt
+    // engine vào client, trước đây renderChecklist gọi vào sẽ nổ ReferenceError.
+    function checkSitemap(sitemap) {
+      if (!sitemap) {
+        return out('sitemap', 'unknown',
+          'Không kiểm tra được sitemap.xml (lỗi mạng hoặc trang chặn truy cập tự động).',
+          'Kiểm tra tay: mở ten-mien.vn/sitemap.xml trong trình duyệt.');
+      }
+      const text = String(sitemap.text || '');
+      const code = sitemap.statusCode || 0;
+      if (code >= 400) {
+        if (code !== 404) {
+          // 403/5xx: không kết luận được — phân biệt rõ với 404 (thật sự chưa có tệp).
+          return out('sitemap', 'unknown',
+            `Máy chủ trả về HTTP ${code} khi lấy sitemap.xml — không xác định được website có sơ đồ trang hay không (site chặn bot tự động, hoặc máy chủ đang sự cố).`,
+            'Kiểm tra tay: mở ten-mien.vn/sitemap.xml trong trình duyệt (site chặn bot thường trả 403).');
+        }
+        return out('sitemap', 'warn',
+          'Chưa có sơ đồ trang (sitemap.xml) — Google vẫn tìm được từng trang, nhưng chậm hơn và bỏ sót trang mới.',
+          'Tạo sitemap.xml (plugin SEO hoặc trình tạo tự động), khai báo trong robots.txt rồi submit trong Google Search Console.');
+      }
+      if (!/<urlset|<sitemapindex/i.test(text)) {
+        return out('sitemap', 'warn',
+          'Địa chỉ sitemap.xml phản hồi nhưng nội dung không đúng định dạng XML sơ đồ trang — máy tìm kiếm đọc không được.',
+          'Xuất lại sitemap đúng chuẩn (thẻ gốc <urlset> hoặc <sitemapindex>) và đặt tại ten-mien.vn/sitemap.xml.');
+      }
+      const soDonVi = (text.match(/<loc>/gi) || []).length;
+      const laNhom = /<sitemapindex/i.test(text);
+      return out('sitemap', 'pass',
+        laNhom
+          ? `Sitemap.xml đọc được — dạng nhóm (sitemapindex) dẫn tới ${soDonVi} sơ đồ trang con (mỗi con chứa địa chỉ các trang).`
+          : `Sitemap.xml đọc được — khai báo ${soDonVi} địa chỉ trang.`,
+        'Cập nhật lại sitemap mỗi khi thêm trang/sản phẩm mới; submit trong Google Search Console.');
+    }
+
+    function checkLinks(doc, meta) {
+      const anchors = Array.from(doc.querySelectorAll('a[href]'));
+      if (anchors.length === 0) {
+        return out('links', 'pass',
+          'Trang không dùng liên kết nào (trong HTML tĩnh) — không có gì để chấm.',
+          'Khi thêm menu, dùng thẻ <a href> thật với chữ mô tả rõ từng đường dẫn.');
+      }
+      let internal = 0;
+      let external = 0;
+      let dead = 0;         // href="#" / javascript: / href hỏng
+      let deadFragment = 0; // href="#tên-anchor" mà id "tên-anchor" không tồn tại trên trang
+      let emptyText = 0;    // liên kết không có chữ hiển thị
+      let baseOrigin = '';
+      try { baseOrigin = new URL(meta.finalUrl || meta.inputUrl || '').origin; } catch { /* giữ '' */ }
+      for (const a of anchors) {
+        const href = (a.getAttribute('href') || '').trim();
+        if (!href || href === '#' || /^javascript:/i.test(href)) {
+          dead++;
+        } else {
+          try {
+            const u = new URL(href, baseOrigin || undefined);
+            // Anchor nội bộ ("#ten-anchor") chỉ hợp lệ khi trang có id đó —
+            // bấm vào sẽ không cuộn đi đâu cả, coi như liên kết lỗi.
+            const hash = u.hash;
+            if (hash.length > 1 && baseOrigin && u.origin === baseOrigin
+                && !doc.getElementById(decodeURIComponent(hash.slice(1)))) {
+              deadFragment++;
+            } else if (baseOrigin && u.origin === baseOrigin) {
+              internal++;
+            } else {
+              external++;
+            }
+          } catch { dead++; }
+        }
+        // Icon-link không chữ hiển thị nhưng có chữ cho trợ năng (aria-label/title)
+        // hay bọc ảnh thì đếm là "có chữ" — đừng oan site ở chuẩn truy cập.
+        if (!a.textContent.trim() && !a.querySelector('img')
+            && !a.getAttribute('aria-label') && !a.getAttribute('title')) emptyText++;
+      }
+      const flawed = dead + deadFragment + emptyText;
+      const count = `Trang có ${anchors.length} liên kết: ${internal} nội bộ, ${external} ngoài.`;
+      const issues = [];
+      if (dead) issues.push(`${dead} liên kết chết (href="#")`);
+      if (deadFragment) issues.push(`${deadFragment} anchor trỏ tới vị trí không tồn tại`);
+      if (emptyText) issues.push(`${emptyText} liên kết không có chữ`);
+      if (flawed === 0) {
+        return out('links', 'pass',
+          `${count} Không phát hiện liên kết lỗi.`,
+          'Giữ chữ mô tả rõ ràng cho mỗi liên kết khi bổ sung mục mới.');
+      }
+      if (flawed <= 5) {
+        return out('links', 'warn',
+          `${count} Cần sửa: ${issues.join(' và ')} — khách bấm không thấy gì, máy quét đi vào ngõ cụt (liên kết anchor cần id khớp trên trang).`,
+          'Trỏ mỗi link chết sang trang thật hoặc xoá đi; liên kết anchor "#ten" cần đủ id="ten" đúng vị trí; liên kết bọc hình cần thêm chữ hoặc aria-label.');
+      }
+      return out('links', 'fail',
+        `${count} Và ${flawed} liên kết lỗi (${issues.join(' và ')}) — số lượng quá lớn, có khả năng trang dính chữ nhúng/khung rác cần dọn.`,
+        'Kiểm tra lại khối inject/plugin chèn link: gỡ phần chèn lạ, làm sạch hệ thống liên kết toàn trang.');
+    }
+
     // Main run function
     const byId = {
       title: checkTitle(doc),
@@ -514,6 +616,9 @@ const WEBCHECK = {
     if (!mountEl) return;
 
     mountEl.textContent = '';
+    // Nhóm lấy đúng thứ tự lần đầu xuất hiện trong result.checks (checks xuất theo
+    // thứ tự DEFS của runChecks) — thay cho hằng GROUPS của runChecks (không thoát scope).
+    const GROUPS = [...new Set(result.checks.map((c) => c.group))];
     const buckets = Object.fromEntries(GROUPS.map((g) => [g, []]));
     for (const c of result.checks) if (buckets[c.group]) buckets[c.group].push(c);
 
@@ -589,12 +694,10 @@ const WEBCHECK = {
     const fails = checks.filter(c => c.level === 'fail').length;
     const unknown = checks.filter(c => c.level === 'unknown').length;
 
-    const groups = Object.fromEntries(
-      Object.keys(result.checks?.reduce((acc, c) => {
-        acc[c.group] = (acc[c.group] || 0) + 1;
-        return acc;
-      }, {}))
-    );
+    const groups = checks.reduce((acc, c) => {
+      acc[c.group] = (acc[c.group] || 0) + 1;
+      return acc;
+    }, {});
 
     return {
       total,
@@ -608,9 +711,12 @@ const WEBCHECK = {
 };
 
 // Export for global use
-if (typeof window !== 'undefined') window.WebCheck = WEBCHECK;
-window.WebCheckRunChecks = WEBCHECK.runChecks;
-window.WebCheckRenderChecklist = WEBCHECK.renderChecklist;
-window.WebCheckGetSummary = WEBCHECK.getSummary;
+if (typeof window !== 'undefined') {
+  window.WebCheck = WEBCHECK;
+  window.WebCheckRunChecks = WEBCHECK.runChecks;
+  window.WebCheckRenderChecklist = WEBCHECK.renderChecklist;
+  window.WebCheckGetSummary = WEBCHECK.getSummary;
+}
 
 export { WEBCHECK };
+export const WebCheck = WEBCHECK;

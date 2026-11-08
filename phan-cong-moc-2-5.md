@@ -1,5 +1,14 @@
 # Hướng dẫn nhận việc Mốc 2–5 — WebCheck (Đề 5)
 
+> **CẬP NHẬT 08/11/2026 — đọc trước khi làm:** sản phẩm chính của nhóm giờ là **app WEBCHECK AI
+> (React + Express ở gốc repo)**, không còn là giao diện vanilla trong `webcheck/`. Phần việc của
+> mốc 2–5 bên dưới **đã có bản thay thế trong app React** (tổng quan = `ScoreSummary`, nhận xét AI =
+> `AiConsultant` + `server/lib/aiReview.js`, xuất báo cáo = `lib/report.js`, lịch sử =
+> `History` + `HistoryContext`). Giao diện vanilla `webcheck/` còn lại là **máy chấm QA bằng cột
+> riêng** (`/webcheck/…` + demo `?demo=1`). Luật điểm đã đổi: app **được hiển thị điểm tổng /100**
+> (xem `contract.md` v3.0, mục 9). Nội dung chi tiết dưới đây giữ nguyên vì chúng là **tiêu chuẩn
+> chất lượng + shape dữ liệu** mà phần React mới cũng phải theo.
+
 > Ai nhận mốc 2–5 chỉ cần đọc 3 thứ: `webcheck/contract.md` (chuyên sâu),
 > file này (định hướng + checklist nghiệm), và chơi thử demo `?demo=1`.
 > Mọi shape JSON, slot cắm, quy tắc ghép đều chốt trong contract — đừng tự suy đoán.
@@ -12,8 +21,9 @@
 2. Người dùng nhập URL → công cụ soi HTML tĩnh → chấm **60 hạng mục** theo
    **4 trạng thái** (Đạt / Cần cải thiện / Chưa đạt / Không xác định) + **mức ưu tiên
    P0–P3**; mỗi mục có **bằng chứng, tác động, hướng khắc phục** bằng tiếng Việt.
-3. **Không có điểm /100, không xếp loại** — cấm hiển thị điểm dưới mọi hình thức
-   (bắt buộc theo đề + hợp đồng v2.0).
+3. ~~**Không có điểm /100, không xếp loại** — cấm hiển thị điểm dưới mọi hình thức
+   (bắt buộc theo đề + hợp đồng v2.0).~~ → **Đã thay từ 08/11/2026:** app WEBCHECK AI
+   chấm điểm chuẩn hóa /100 minh bạch (tham khảo `server/lib/scoring.js` — total 136 điểm thô).
 4. Kết quả (Result v2.0) nằm trong `sessionStorage["webcheck:result"]` — mọi mốc
    **đọc duy nhất qua `WebCheck.docKetQua()`** (hàm có sẵn trong `js/analyze.js`);
    không parse tay, không gọi lại `/api/fetch`.

@@ -9,9 +9,11 @@ import {
   FileText,
   Globe2,
   Link2,
+  Search,
   Server,
   ShieldCheck,
   Sparkles,
+  Zap,
 } from 'lucide-react';
 import { UrlForm } from '../components/UrlForm.jsx';
 import { EmptyState } from '../components/EmptyState.jsx';

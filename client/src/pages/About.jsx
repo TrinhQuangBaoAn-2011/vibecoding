@@ -9,6 +9,7 @@ import {
   Globe2,
   Layers,
   Lock,
+  Server,
   ShieldCheck,
   Sparkles,
   Zap,

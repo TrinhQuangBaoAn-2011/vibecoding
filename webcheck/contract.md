@@ -1,13 +1,24 @@
-# WebCheck — hợp đồng ghép code (v2.0)
+# WebCheck — hợp đồng ghép code (v3.0)
 
 Tài liệu này chốt cách các mốc cắm vào phần Mốc 1. Quy ước của nhóm là **làm riêng rồi ghép**,
 nên mọi thứ các bạn cần đều nằm ở đây — đọc kỹ trước khi viết code để không phải chỉnh sau.
 
-**v2.0 thay đổi lớn nhất:** **bỏ hoàn toàn chấm điểm /100** (xem phần "Lịch sử", mục 9). Kết quả
-giờ là **trạng thái 4 mức (Đạt / Cần cải thiện / Chưa đạt / Không xác định) + mức ưu tiên P0–P3
-có bằng chứng** cho **60 hạng mục** (34 mục cũ giữ nguyên ID + ý nghĩa, thêm 26 mục mới).
-**Cấm hiển thị điểm dưới bất kỳ hình thức nào** — không điểm tổng, không điểm nhóm, không
-weight, không xếp loại.
+**v3.0 (08/11/2026) thay đổi lớn nhất:** **sản phẩm chính của nhóm là app WEBCHECK AI** (React +
+Express, thư mục `client/` + `server/` ở gốc repo) — trang chủ `/` chạy app này, **chấm đủ 60 tiêu
+chí v2.0 theo trọng số P0–P3 và CHO PHÉP HIỂN THỊ ĐIỂM TỔNG CHUẨN HÓA /100** (vòng điểm + thanh
+nhóm trong `ScoreSummary`). Đây là quyết định nhóm chốt lần 2 ngày 08/11/2026 — **bãi bỏ luật
+"cấm hiển thị điểm" của v2.0** (xem mục 9).
+
+Thư mục `webcheck/` từ v3.0 là **khu engine/library của bộ máy v2.0** (`js/analyze.js` + 46 tests +
+`api/fetch.mjs`): server app nạp engine qua `server/lib/webcheckEngine.js`; UI vanilla
+`index.html`/`results.html` (kèm bản đóng gói ở `client/dist/webcheck/`) chỉ còn vai trò **máy chấm
+QA riêng lẻ** — không phải sản phẩm trình bày; phần việc của mốc 2–5 đã có bản thay thế trong app
+React (ScoreSummary / AiConsultant / report.js / History).
+
+**v2.0 vẫn là nền tảng dữ liệu:** kết quả là **trạng thái 4 mức (Đạt / Cần cải thiện / Chưa đạt /
+Không xác định) + mức ưu tiên P0–P3 có bằng chứng** cho **60 hạng mục** (34 mục cũ giữ nguyên ID +
+ý nghĩa, thêm 26 mục mới). Điểm /100 chỉ là **chuẩn hóa minh bạch phía server** (tử số = điểm đã
+đạt, mẫu số bỏ mục Không xác định) — không phải điểm xếp hạng chính thức của Google.
 
 ---
 
@@ -199,7 +210,7 @@ Bảng `PRIORITY_MAP[id].{fail,warn}` trên cũng chốt trong `js/analyze.js` (
 | 2 | `#summary-slot` | **Đã cắm** — `js/moc2-tongquan.js`: thống kê 4 trạng thái + "Việc cần làm trước" (P0→P1) + 6 câu hỏi doanh nghiệp (không điểm, không AI) |
 | 3 | `#ai-slot` | **Tạm tháo** — slot giữ nguyên, tự ẩn (CSS `:empty`); script `js/moc3-ai.js` không dùng (mục 8 nói cách dựng lại) |
 | 4 | `#export-slot` | **Đã cắm (viết lại v2.0)** — `js/moc4-xuat.js`: báo cáo text CẦN LÀM TRƯỚC + chi tiết P0→P3; nút sao chép / tải .txt / xem trước |
-| 5 | `#history-slot` | Trống, chờ mốc 5 (lịch sử localStorage tự quản) |
+| 5 | `#history-slot` | **Đã cắm** — `js/moc5-lich-su.js`: tự ghi lịch sử kiểm tra vào localStorage, xem lại khi chưa có Result, xoá từng bản có hỏi xác nhận (không điểm, không gọi API) |
 
 Slot trống tự ẩn (CSS `:empty { display:none }`). `renderChecklist` v2.0 đã dựng sẵn checklist
 trong `#checklist`: **7 khối `<details>`** (id `grp-0`…`grp-6`) theo nhóm, đầu trang có **bộ lọc
@@ -233,8 +244,10 @@ trạng thái (✓/!/✕/?) + badge loại bằng chứng + badge `P0…P3` (ch�
    parse sessionStorage.
 4. Không thêm thư viện mới mà không thống nhất cả nhóm (hiện frontend không có dependency — cây thư mục nhẹ, deploy nhanh).
 5. Đặt tên biến/hàm tiếng Việt hoặc tiếng Anh đều được, nhưng **nội dung hiển thị người dùng phải tiếng Việt**.
-6. **Quy tắc riêng v2.0:** không hiển thị điểm dưới bất kỳ hình thức nào; `unknown` không được
-   coi là lỗi hay cảnh báo; mọi list ưu tiên sắp P0→P3.
+6. **Quy tắc riêng v3.0:** app WEBCHECK AI được hiển thị điểm tổng /100 (ScoreSummary) kèm giải
+   thích thang điểm và trọng số — không được trình bày điểm như dữ liệu xếp hạng chính thức của
+   Google; `unknown` không được coi là lỗi hay cảnh báo (loại khỏi cả tử và mẫu khi chấm, không
+   đưa vào lộ trình); mọi list ưu tiên sắp P0→P3.
 
 ## 7. Chi tiết API (khi cần hiểu sâu — không dùng)
 
@@ -305,3 +318,9 @@ prompt mẫu vẫn như v1.3 — giữ ở trong file `js/moc3-ai.js`, không l�
   6. **renderChecklist v2.0**: 7 nhóm `<details>` + chip lọc theo trạng thái và ưu tiên + badge
      bằng chứng/ưu tiên; docKetQua có gate phiên bản (từ chối Result v1.2/v1.3).
   7. Tests rewrite cho v2.0 (46 test, `tests/analyze.test.mjs` — số demo chốt 42/14/3/1).
+- **v3.0** (08/11/2026): **sản phẩm chính = app WEBCHECK AI** (`client/` React + `server/` Express,
+  deploy Vercel 1-lambda `server/index.js` theo `vercel.json` ở gốc). Cho phép hiển thị điểm tổng
+  /100 — bãi bỏ luật "cấm hiển thị điểm" của v2.0. `webcheck/` giữ vai trò engine/library: bộ máy
+  60 mục + tests vẫn là **gate chất lượng** (46 test + tests server `server/tests/scoring.test.mjs`
+  5 test), UI vanilla chỉ còn là máy chấm QA. UI "lộ trình cải thiện ưu tiên" của app do mốc bổ
+  sung theo thiết kế nhóm (components/RoadmapPanel.jsx).

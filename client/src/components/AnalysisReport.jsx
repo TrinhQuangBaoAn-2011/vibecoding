@@ -14,6 +14,7 @@ import { buildReport, copyTextToClipboard } from '../lib/report.js';
 import { useToast } from '../context/ToastContext.jsx';
 import { ScoreSummary } from './ScoreSummary.jsx';
 import { CriteriaList } from './CriteriaList.jsx';
+import { RoadmapPanel } from './RoadmapPanel.jsx';
 import { ComparisonCard } from './ComparisonCard.jsx';
 import { AiConsultant } from './AiConsultant.jsx';
 
@@ -159,6 +160,8 @@ export function AnalysisReport({
       </section>
 
       <ScoreSummary analysis={analysis} comparison={comparison} />
+
+      <RoadmapPanel criteria={analysis.criteria || []} />
 
       <CriteriaList criteria={analysis.criteria || []} />
 
