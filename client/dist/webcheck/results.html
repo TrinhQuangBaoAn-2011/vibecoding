@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kết quả kiểm tra — WebCheck</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230E6B78'/%3E%3Cpath d='M9 17l5 5 9-11' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-row">
+    <a class="wordmark" href="/">WebCheck</a>
+    <a class="back-link" href="/">Kiểm tra trang khác</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ── Phần có kết quả ─────────────────────────────────────────────── -->
+  <section id="summary" hidden>
+    <div class="sheet">
+      <h1 id="site-title" class="site-title"></h1>
+      <ul class="meta-line" id="meta-line"></ul>
+
+      <div id="notice" class="notice" hidden role="alert"></div>
+
+      <!-- ────────────────────────────────────────────────────────── -->
+      <!-- MỘC 2 (v2.0 đã cắm): js/moc2-tongquan.js → #summary-slot    -->
+      <!--   thống kê 4 trạng thái + bảng "Việc cần làm trước" P0/P1   -->
+      <!--   + trả lời 6 câu hỏi doanh nghiệp (KHÔNG có điểm, no AI).  -->
+      <!-- ────────────────────────────────────────────────────────── -->
+      <div id="summary-slot" class="slot"></div>
+
+      <div id="checklist" aria-label="Checklist từng hạng mục"></div>
+
+      <!-- ────────────────────────────────────────────────────────── -->
+      <!-- MỐC 3 — AI nhận xét (TẠM THÁO trong v1.3 theo yêu cầu):      -->
+      <!--   slot #ai-slot giữ nguyên và tự ẩn (CSS .slot:empty).       -->
+      <!--   Khi tích hợp lại: (1) thêm <script src="js/moc3-ai.js">    -->
+      <!--   vào cuối trang — file vẫn giữ nguyên framework;            -->
+      <!--   (2) quy ước render vẫn là { summary, strengths,            -->
+      <!--   improvements } vào #ai-slot (contract.md mục 8).           -->
+      <!-- MỐC 4 (v2.0 đã cắm): js/moc4-xuat.js → #export-slot      -->
+      <!--   nút sao chép / tải .txt báo cáo P0→P3 (không AI).       -->
+      <!-- MỐC 5 cắm vào #history-slot (lịch sử localStorage).          -->
+      <!-- ────────────────────────────────────────────────────────── -->
+      <div id="ai-slot" class="slot"></div>
+      <div id="export-slot" class="slot"></div>
+      <div id="history-slot" class="slot"></div>
+    </div>
+  </section>
+
+  <!-- ── Phần trống (mở results.html khi chưa kiểm tra gì) ───────────── -->
+  <section id="empty" hidden>
+    <div class="sheet empty-state">
+      <h1>Chưa có kết quả trong phiên này</h1>
+      <p>
+        Trang này lấy dữ liệu từ lần kiểm tra vừa chạy. Hãy quay lại trang chính,
+        nhập địa chỉ rồi bấm "Kiểm tra trang".
+      </p>
+      <p class="help">
+        Nếu bạn vừa cập nhật WebCheck lên v2.0, kết quả chấm từ phiên bản cũ (v1.2/v1.3)
+        không còn tương thích — chạy lại kiểm tra để có kết quả theo hệ thống mới.
+      </p>
+      <p class="help">
+        Đang dựng phần của mình cho mốc sau? Mở
+        <a href="/results.html?demo=1">trang kết quả mẫu (demo)</a>
+        — nó dùng một Result có sẵn, không cần mạng.
+      </p>
+      <p><a class="button" href="/">Quay lại nhập địa chỉ</a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    WebCheck giúp chủ doanh nghiệp nhỏ biết website đang thiếu gì trước khi đầu tư vào marketing.
+  </div>
+</footer>
+
+<script src="js/analyze.js" defer></script>
+<script src="js/results.js" defer></script>
+<!-- MỘC 2 (v2.0): tổng quan trạng thái + ưu tiên P0–P3, không có điểm/score -->
+<script src="js/moc2-tongquan.js" defer></script>
+<!-- MỘC 3: script AI ĐÃ THÁO khỏi v1.3 (slot #ai-slot tự ẩn) — file js/moc3-ai.js
+     vẫn giữ nguyên để dựng lại sau khi được phép (contract.md mục 9). -->
+<!-- MỐC 4 (v2.0): xuất báo cáo text P0→P3 — không điểm, không AI -->
+<script src="js/moc4-xuat.js" defer></script>
+<!-- MỐC 5: lịch sử kiểm tra tự ghi vào localStorage "webcheck:history" — không điểm, không gọi API -->
+<script src="js/moc5-lich-su.js" defer></script>
+</body>
+</html>

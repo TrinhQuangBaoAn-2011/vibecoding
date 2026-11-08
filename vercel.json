@@ -1,14 +1,25 @@
 {
   "version": 2,
-  "cleanUrls": false,
   "builds": [
-    { "src": "webcheck/api/fetch.mjs", "use": "@vercel/node" },
-    { "src": "webcheck/**", "use": "@vercel/static" }
+    {
+      "src": "server/index.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "client/dist/**",
+          "../client/dist/**",
+          "webcheck/api/fetch.mjs",
+          "../webcheck/api/fetch.mjs",
+          "webcheck/js/analyze.js",
+          "../webcheck/js/analyze.js"
+        ]
+      }
+    }
   ],
   "routes": [
-    { "src": "/api/fetch", "dest": "webcheck/api/fetch.mjs" },
-    { "src": "/webcheck/(.*)", "dest": "/webcheck/$1" },
-    { "src": "/", "dest": "/webcheck/index.html" },
-    { "src": "/(.*)", "dest": "/webcheck/$1" }
+    {
+      "src": "/(.*)",
+      "dest": "server/index.js"
+    }
   ]
 }
