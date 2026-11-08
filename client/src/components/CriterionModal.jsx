@@ -5,9 +5,10 @@ import {
   HelpCircle,
   Lightbulb,
   MinusCircle,
+  Scale,
   XCircle,
 } from 'lucide-react';
-import { getStatusMeta } from '../lib/constants.js';
+import { getStatusMeta, getPriorityMeta } from '../lib/constants.js';
 import { Modal } from './Modal.jsx';
 import { StatusBadge } from './StatusBadge.jsx';
 
@@ -53,10 +54,21 @@ export function CriterionModal({ criterion, open, onClose }) {
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={criterion.status} label={criterion.statusLabel} />
           <span className={`badge ${meta.badge}`}>
-            {formatPoints(criterion.points)}/{criterion.maxPoints} điểm
+            {excluded ? 'Không tính vào điểm tổng' : `${formatPoints(criterion.points)}/${criterion.maxPoints} điểm`}
           </span>
-          {excluded && (
-            <span className="badge bg-ink-100 text-ink-600">Không tính vào điểm tổng</span>
+          {(() => {
+            const priority = getPriorityMeta(criterion.criticality || criterion.priority);
+            return (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ring-1 ring-inset ${priority.badge}`}
+                title={priority.description}
+              >
+                {criterion.criticality || criterion.priority || 'P2'} · {priority.label} · {priority.weight} điểm thô
+              </span>
+            );
+          })()}
+          {criterion.group && (
+            <span className="badge bg-ink-100 text-ink-600">{criterion.group}</span>
           )}
         </div>
 
@@ -77,6 +89,20 @@ export function CriterionModal({ criterion, open, onClose }) {
           </p>
           <p className="text-sm leading-relaxed text-ink-700">{criterion.message}</p>
         </div>
+
+        {criterion.impact && (
+          <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4">
+            <div className="flex items-start gap-2.5">
+              <Scale className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-sky-700">
+                  Vì sao tiêu chí này quan trọng
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink-700">{criterion.impact}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="rounded-xl border border-brand-100 bg-brand-50/60 p-4">
           <div className="flex items-start gap-2.5">

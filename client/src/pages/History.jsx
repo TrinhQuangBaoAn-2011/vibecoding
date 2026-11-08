@@ -178,7 +178,7 @@ export function History() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Tìm theo tên miền hoặc URL..."
+              placeholder="Tìm theo tên miền hoặc URL…"
               className="input pl-10"
               aria-label="Tìm trong lịch sử"
             />

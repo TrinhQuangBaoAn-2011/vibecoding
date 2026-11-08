@@ -138,7 +138,7 @@ export function ProgressSteps({
         </div>
         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
           <div
-            className={`h-full rounded-full transition-all duration-700 ${
+            className={`h-full rounded-full transition-[width] duration-700 ${
               status === 'error'
                 ? 'bg-gradient-to-r from-rose-500 to-orange-400'
                 : 'bg-gradient-to-r from-brand-600 to-cyan-400'

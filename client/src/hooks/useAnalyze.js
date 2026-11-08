@@ -18,8 +18,8 @@ const INITIAL_STEPS = [
   },
   {
     key: 'check',
-    label: 'Kiểm tra 10 tiêu chí',
-    detail: 'Đọc HTML bằng Cheerio và đánh giá từng tiêu chí.',
+    label: 'Kiểm tra 60 tiêu chí',
+    detail: 'Bộ máy WebCheck v2.0 chấm từng tiêu chí theo trọng số P0–P3.',
     status: 'pending',
   },
   {

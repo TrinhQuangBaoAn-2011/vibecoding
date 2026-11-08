@@ -21,22 +21,50 @@ export function Modal({
 }) {
   const titleId = useId();
   const closeRef = useRef(null);
+  const dialogRef = useRef(null);
+  const lastActiveRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return undefined;
     const previousOverflow = document.body.style.overflow;
+    lastActiveRef.current = document.activeElement;
     document.body.style.overflow = 'hidden';
     closeRef.current?.focus();
 
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') onCloseRef.current?.();
+      if (event.key === 'Escape') {
+        onCloseRef.current?.();
+        return;
+      }
+      if (event.key === 'Tab' && dialogRef.current) {
+        const focusables = dialogRef.current.querySelectorAll(
+          'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        const last = focusables[focusables.length - 1];
+        const first = focusables[0];
+        if (!first) {
+          event.preventDefault();
+          return;
+        }
+        const active = document.activeElement;
+        const inside = dialogRef.current.contains(active);
+        if (event.shiftKey && (!inside || active === first)) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (!inside || active === last)) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', onKeyDown);
+      lastActiveRef.current?.focus?.();
+      lastActiveRef.current = null;
     };
   }, [open]);
 
@@ -53,6 +81,7 @@ export function Modal({
       />
       <div className="relative flex min-h-full items-end justify-center sm:items-center sm:p-6">
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
@@ -81,7 +110,7 @@ export function Modal({
             </button>
           </div>
 
-          <div className="scrollbar-thin max-h-[min(70vh,720px)] overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
+          <div className="scrollbar-thin max-h-[min(70vh,720px)] overscroll-contain overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
 
           {footer && (
             <div className="flex flex-col-reverse gap-2 border-t border-ink-100 bg-ink-50/60 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">

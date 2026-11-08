@@ -9,7 +9,9 @@
           "client/dist/**",
           "../client/dist/**",
           "webcheck/api/fetch.mjs",
-          "../webcheck/api/fetch.mjs"
+          "../webcheck/api/fetch.mjs",
+          "webcheck/js/analyze.js",
+          "../webcheck/js/analyze.js"
         ]
       }
     }

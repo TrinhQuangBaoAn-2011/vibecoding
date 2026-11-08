@@ -8,21 +8,10 @@ import {
   CheckCircle2,
   FileText,
   Globe2,
-  AlignLeft,
-  Search,
-  Heading1,
-  Image as ImageIcon,
-  Languages,
   Link2,
-  Lock,
-  Share2,
   Server,
   ShieldCheck,
-  Smartphone,
   Sparkles,
-  Star,
-  Type,
-  Zap,
 } from 'lucide-react';
 import { UrlForm } from '../components/UrlForm.jsx';
 import { EmptyState } from '../components/EmptyState.jsx';
@@ -32,34 +21,23 @@ import { AnalysisReport } from '../components/AnalysisReport.jsx';
 import { useAnalyze } from '../hooks/useAnalyze.js';
 import { useHistory } from '../context/HistoryContext.jsx';
 import { useHealth } from '../context/HealthContext.jsx';
-import { CRITERIA_META } from '../lib/constants.js';
-import { formatDateTime, formatDuration, formatBytes } from '../lib/format.js';
+import {
+  CRITERIA_COUNTS_BY_PRIORITY,
+  CRITERIA_GROUPS,
+  CRITERIA_META,
+  GROUP_ICONS,
+  TOTAL_WEIGHT,
+  WEIGHT_BY_PRIORITY,
+} from '../lib/constants.js';
 
-const CRITERION_ICONS = {
-  title: Type,
-  'meta-description': AlignLeft,
-  viewport: Smartphone,
-  favicon: Star,
-  h1: Heading1,
-  https: Lock,
-  'image-alt': ImageIcon,
-  language: Languages,
-  canonical: Link2,
-  'open-graph': Share2,
-};
+const CRITERION_PREVIEW = ['https', 'title', 'viewport', 'img_alt'];
 
-const CRITERION_DESCRIPTIONS = {
-  title: 'Tiêu đề hiển thị trên tab và kết quả tìm kiếm.',
-  'meta-description': 'Đoạn mô tả giúp người dùng quyết định nhấp.',
-  viewport: 'Bố cục hiển thị đúng trên thiết bị di động.',
-  favicon: 'Biểu tượng nhận diện thương hiệu trên tab.',
-  h1: 'Xác định rõ chủ đề chính của trang.',
-  https: 'Mã hóa kết nối giữa người dùng và máy chủ.',
-  'image-alt': 'Mô tả thay thế cho hình ảnh, hỗ trợ tiếp cận.',
-  language: 'Khai báo ngôn ngữ cho trình duyệt và công cụ tìm kiếm.',
-  canonical: 'Chỉ rõ phiên bản chính khi có nhiều URL.',
-  'open-graph': 'Hiển thị đẹp khi chia sẻ lên mạng xã hội.',
-};
+const PRIORITY_BARS = [
+  { level: 'P0', solid: 'bg-rose-500' },
+  { level: 'P1', solid: 'bg-orange-500' },
+  { level: 'P2', solid: 'bg-amber-500' },
+  { level: 'P3', solid: 'bg-sky-500' },
+];
 
 const STEPS = [
   {
@@ -70,12 +48,12 @@ const STEPS = [
   {
     icon: Server,
     title: 'Backend tải HTML thật',
-    description: 'Express và Cheerio đọc trực tiếp nội dung website, không dùng dữ liệu mẫu hay CORS.',
+    description: 'Express tải HTML và bộ máy WebCheck v2.0 đọc trực tiếp nội dung website, kèm probes robots.txt / sitemap.xml.',
   },
   {
     icon: Sparkles,
     title: 'Chấm điểm và nhận xét',
-    description: '10 tiêu chí được chấm, chuẩn hóa về 100 và AI tổng hợp nhận xét tiếng Việt.',
+    description: '60 tiêu chí được chấm theo trọng số P0–P3, chuẩn hóa về 100 và AI tổng hợp nhận xét tiếng Việt.',
   },
 ];
 
@@ -141,7 +119,7 @@ export function Dashboard() {
 
         <div className="relative grid items-start gap-8 lg:grid-cols-[1.25fr_1fr] lg:gap-10">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border-border brand-50/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-brand-600">
+            <p className="inline-flex items-center gap-2 rounded-full border border-border bg-brand-50/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-brand-600">
               <Zap className="h-3.5 w-3.5" />
               Website intelligence cho doanh nghiệp Việt
             </p>
@@ -153,7 +131,9 @@ export function Dashboard() {
             </h1>
 
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              WEBCHECK AI phân tích HTML thực tế của bất kỳ website công khai nào, chấm điểm 10 tiêu chí cơ bản và gợi ý lộ trình cải thiện bằng tiếng Việt — minh bạch, có bằng chứng, trong vài giây.
+              WEBCHECK AI phân tích HTML thực tế của bất kỳ website công khai nào, chấm theo bộ máy
+              v2.0 đủ 60 tiêu chí — quan trọng bậc nào chấm điểm cao bậc đó — và gợi ý lộ trình cải
+              thiện bằng tiếng Việt: minh bạch, có bằng chứng, trong vài giây.
             </p>
 
             <div className="mt-6">
@@ -163,7 +143,7 @@ export function Dashboard() {
             <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                10 tiêu chí, thang 100
+                60 tiêu chí trọng số, thang 100
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 text-brand-500" />
@@ -180,35 +160,60 @@ export function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Bộ tiêu chí</p>
-                <p className="mt-1 text-sm font-bold text-foreground">10 điểm chạm chất lượng</p>
+                <p className="mt-1 text-sm font-bold text-foreground">60 tiêu chí · trọng số P0–P3</p>
               </div>
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
                 <Globe2 className="h-5 w-5" />
               </span>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-1.5">
-              {CRITERIA_META.slice(0, 8).map((criterion) => {
-                const Icon = CRITERION_ICONS[criterion.id] || FileText;
+            <div className="mt-3 space-y-2">
+              {PRIORITY_BARS.map(({ level, solid }) => {
+                const count = CRITERIA_COUNTS_BY_PRIORITY[level] || 0;
+                const weight = WEIGHT_BY_PRIORITY[level];
                 return (
-                  <div
-                    key={criterion.id}
-                    className="flex items-center gap-2 rounded-lg border-border border-brand-100 bg-brand-50/60 px-2 py-1.5"
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0 text-brand-500" />
-                    <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-foreground">
-                      {criterion.name}
+                  <div key={level} className="flex items-center gap-2">
+                    <span className={`inline-flex h-5 w-8 items-center justify-center rounded text-[10px] font-extrabold text-white ${solid}`}>
+                      {level}
                     </span>
-                    <span className="text-[10px] font-bold text-muted-foreground tabular">{criterion.maxPoints}</span>
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
+                      <div
+                        className={`h-full rounded-full ${solid}`}
+                        style={{ width: `${Math.max(4, (count / CRITERIA_META.length) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="w-24 text-right text-[11px] font-semibold text-muted-foreground tabular">
+                      {count} mục ×{weight}đ
+                    </span>
                   </div>
                 );
               })}
             </div>
 
+            <div className="mt-3 grid grid-cols-2 gap-1.5">
+              {CRITERIA_META.filter((criterion) => CRITERION_PREVIEW.includes(criterion.id)).map(
+                (criterion) => (
+                  <div
+                    key={criterion.id}
+                    className="flex items-center gap-1.5 rounded-lg border border-brand-100 bg-brand-50/60 px-2 py-1.5"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-foreground">
+                      {criterion.name}
+                    </span>
+                    <span className="text-[10px] font-bold text-muted-foreground tabular">
+                      ×{criterion.weight}
+                    </span>
+                  </div>
+                ),
+              )}
+            </div>
+
             <div className="mt-2 flex items-center justify-between rounded-lg bg-neutral-900 px-3 py-2 text-white">
-              <span className="text-[11px] font-semibold">2 tiêu chí còn lại</span>
+              <span className="text-[11px] font-semibold">
+                {CRITERIA_META.length - CRITERION_PREVIEW.length} tiêu chí còn lại · 7 nhóm
+              </span>
               <span className="text-[11px] font-bold tabular">
-                +{CRITERIA_META.slice(8).reduce((total, item) => total + item.maxPoints, 0)} điểm
+                Ba-rem {TOTAL_WEIGHT} điểm thô → /100
               </span>
             </div>
 
@@ -304,45 +309,63 @@ export function Dashboard() {
       <section>
         <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-foreground">Website được đánh giá trên 10 tiêu chí</h2>
+            <h2 className="text-lg font-bold text-foreground">Website được đánh giá trên 60 tiêu chí</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Tổng điểm tối đa 100. Tiêu chí không áp dụng được loại khỏi mẫu số và chuẩn hóa lại.
+              Trọng số theo mức ưu tiên P0–P3. Tiêu chí không xác định được loại khỏi mẫu số và
+              chuẩn hóa lại về thang 100.
             </p>
 
             <Link to="/about" className="text-xs font-bold text-brand-600 hover:text-brand-700">
               Chi tiết phương thức
             </Link>
           </div>
+        </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {CRITERIA_META.map((criterion) => {
-              const Icon = CRITERION_ICONS[criterion.id] || FileText;
-              return (
-                <div key={criterion.id} className="card flex items-start gap-3 p-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-50 text-muted-500 ring-1 ring-inset ring-border-100">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {CRITERIA_GROUPS.map((groupName) => {
+            const Icon = GROUP_ICONS[groupName] || FileText;
+            const items = CRITERIA_META.filter((criterion) => criterion.group === groupName);
+            const weight = items.reduce((total, item) => total + item.weight, 0);
+            return (
+              <div key={groupName} className="card p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 ring-1 ring-inset ring-brand-100">
                     <Icon className="h-4 w-4" />
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold text-foreground">{criterion.name}</p>
-                      <span className="badge bg-brand-50 text-brand-600 !px-2 !py-0.5 !text-[10px]">
-                        {criterion.maxPoints} điểm
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      {CRITERION_DESCRIPTIONS[criterion.id]}
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-foreground">{groupName}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {items.length} tiêu chí ·{' '}
+                      <span className="font-bold text-ink-800 tabular">{weight} điểm thô</span>
                     </p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {PRIORITY_BARS.filter(({ level }) =>
+                    items.some((item) => item.criticality === level),
+                  ).map(({ level, solid }) => (
+                    <span
+                      key={level}
+                      className={`inline-flex h-4 items-center justify-center rounded px-1.5 text-[9px] font-extrabold text-white ${solid}`}
+                    >
+                      {level} ×{items.filter((item) => item.criticality === level).length}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-2 truncate text-[11px] text-muted-foreground">
+                  {items.map((item) => item.name).slice(0, 3).join(' · ')}
+                  {items.length > 3 ? ` +${items.length - 3}` : ''}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
         <div className="mt-6">
           <p className="text-center text-xs text-muted-foreground">
-            Báo cáo được tạo bởi WEBCHECK AI từ dữ liệu HTML thực tế. Điểm số theo bộ tiêu chí cơ bản,
-            không phải điểm xếp hạng chính thức của Google và không thay thế kiểm toán SEO chuyên sâu.
+            Báo cáo được tạo bởi WEBCHECK AI từ dữ liệu HTML thực tế. Điểm số theo bộ 60 tiêu chí
+            v2.0 có trọng số, không phải điểm xếp hạng chính thức của Google và không thay thế
+            kiểm toán SEO chuyên sâu.
           </p>
         </div>
       </section>

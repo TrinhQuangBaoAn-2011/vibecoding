@@ -65,16 +65,16 @@ export function UrlForm({
           <input
             ref={inputRef}
             id={inputId}
-            type="text"
+            type="url"
             inputMode="url"
-            autoComplete="url"
+            autoComplete="off"
             spellCheck={false}
             value={value}
             onChange={(event) => {
               setValue(event.target.value);
               if (error) setError(null);
             }}
-            placeholder="Nhập URL website, ví dụ: https://congty.vn"
+            placeholder="Ví dụ: https://congty.vn…"
             aria-invalid={Boolean(error)}
             aria-describedby={error ? errorId : undefined}
             disabled={loading}
@@ -89,7 +89,7 @@ export function UrlForm({
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Đang phân tích...
+              Đang phân tích…
             </>
           ) : (
             <>

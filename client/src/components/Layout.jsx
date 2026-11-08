@@ -122,8 +122,8 @@ export function Layout() {
           <div className="mt-6 rounded-2xl border border-ink-200/80 bg-ink-50 p-4 text-xs leading-relaxed text-ink-500 dark:border-ink-800 dark:bg-ink-800/50 dark:text-ink-300">
             <p className="font-bold text-ink-700 dark:text-ink-100">WEBCHECK AI</p>
             <p className="mt-1">
-              Phân tích website thời gian thực: 10 tiêu chí SEO, báo cáo AI và danh sách kiểm tra
-              22 hạng mục.
+              Phân tích website thời gian thực: 60 tiêu chí có trọng số, báo cáo AI và danh sách
+              kiểm tra 22 hạng mục.
             </p>
           </div>
         </aside>

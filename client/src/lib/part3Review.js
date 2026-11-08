@@ -1,5 +1,10 @@
 // Part 3 Review Module - BongBong style
 // Integrates with WEBCHECK AI analysis data
+//
+// Nguồn hiển thị duy nhất của ba-rem: criteriaCatalog.js (60 tiêu chí v2.0,
+// sinh tự động từ bộ máy mốc 1 qua node scripts/sync-criteria.mjs).
+
+import { CRITERIA_COUNTS_BY_PRIORITY, CRITERIA_GROUPS, CRITERIA_META } from './constants.js';
 
 const PART3_CONFIG = {
   endpoint: '/api/ai-review',
@@ -11,20 +16,6 @@ const PART3_CONFIG = {
   headers: null,
 };
 
-// CRITERIA MAP - matches WEBCHECK AI criteria
-const CRITERIA_MAP = {
-  title: { key: 'seo', label: 'Thẻ Title', icon: 'target', accent: 'emerald' },
-  'meta-description': { key: 'seo', label: 'Meta Description', icon: 'target', accent: 'emerald' },
-  viewport: { key: 'responsive', label: 'Viewport', icon: 'devices', accent: 'cyan' },
-  favicon: { key: 'ui', label: 'Favicon', icon: 'star', accent: 'indigo' },
-  h1: { key: 'content', label: 'Tiêu đề H1', icon: 'text', accent: 'violet' },
-  https: { key: 'security', label: 'HTTPS', icon: 'shield', accent: 'slate' },
-  'image-alt': { key: 'content', label: 'Thuộc tính Alt', icon: 'image', accent: 'amber' },
-  language: { key: 'content', label: 'Ngôn ngữ', icon: 'languages', accent: 'fuchsia' },
-  canonical: { key: 'seo', label: 'Canonical', icon: 'link', accent: 'emerald' },
-  'open-graph': { key: 'seo', label: 'Open Graph', icon: 'share2', accent: 'emerald' },
-};
-
 // Severity map for improvements
 const SEVERITY_MAP = {
   critical: { key: 'critical', label: 'Nghiêm trọng', badge: 'bg-red-500', dot: 'bg-red-500', bar: 'from-red-500 to-rose-500' },
@@ -32,6 +23,31 @@ const SEVERITY_MAP = {
   medium: { key: 'medium', label: 'Trung bình', badge: 'bg-amber-500', dot: 'bg-amber-500', bar: 'from-amber-500 to-yellow-500' },
   low: { key: 'low', label: 'Thấp', badge: 'bg-sky-500', dot: 'bg-sky-500', bar: 'from-sky-500 to-cyan-500' },
 };
+
+const SEVERITY_FROM_PRIORITY = { Cao: 'high', 'Trung bình': 'medium', Thấp: 'low' };
+
+const CRITERIA_COUNT = CRITERIA_META.length; // 60
+const GROUP_COUNT = CRITERIA_GROUPS.length; // 7
+
+const CRITERIA_BY_ID = new Map(CRITERIA_META.map((criterion) => [criterion.id, criterion]));
+
+/* Nhận id hoặc nhãn hiển thị, trả về nhãn của tiêu chí trong ba-rem v2.0. */
+function criterionLabel(raw) {
+  if (raw === null || raw === undefined || raw === '') return 'Tổng thể';
+  const found = CRITERIA_BY_ID.get(String(raw));
+  return found ? found.name : String(raw);
+}
+
+/* escape HTML — panel render bằng innerHTML nên mọi chuỗi có nguồn từ dữ liệu
+ * website / AI (không đáng tin) phải được escape trước khi chèn. */
+function esc(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // Initialize Part3Review class
 function Part3Review(container, options = {}) {
@@ -77,10 +93,10 @@ Part3Review.prototype.renderShell = function() {
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-700 ring-1 ring-indigo-200">Phần 3</span>
                   <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">AI Review Engine</span>
-                  <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-200">Ba-rem 10 tiêu chí</span>
+                  <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-200">Ba-rem ${CRITERIA_COUNT} tiêu chí</span>
                 </div>
                 <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">Đánh giá & nhận xét website</h2>
-                <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-500">AI đối chiếu dữ liệu quét client-side với Ba-rem chuyên sâu, chỉ kết luận dựa trên bằng chứng quan sát được.</p>
+                <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-500">AI đối chiếu điểm và nhận xét của bộ máy v2.0 với ba-rem trọng số P0–P3, chỉ kết luận dựa trên bằng chứng quan sát được.</p>
               </div>
             </div>
             <div class="flex flex-col items-start gap-3 md:items-start">
@@ -89,7 +105,7 @@ Part3Review.prototype.renderShell = function() {
                   <span data-p3-statusdot class="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500"></span>
                   <div>
                     <p data-p3-statustitle class="text-sm font-semibold text-slate-800">AI đối chiếu Ba-rem chuyên sâu</p>
-                    <p data-p3-statussub class="text-xs text-slate-500">Sẵn sàng nhận dữ liệu quét từ Phần 1.</p>
+                    <p data-p3-statussub class="text-xs text-slate-500">Sẵn sàng đón kết quả chấm của bộ máy ${CRITERIA_COUNT} tiêu chí.</p>
                   </div>
                 </div>
                 <span data-p3-statusbadge class="inline-flex w-fit items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">Sẵn sàng</span>
@@ -100,7 +116,7 @@ Part3Review.prototype.renderShell = function() {
         </header>
         <div data-p3-body class="relative border-t border-slate-100 p-6 md:p-8"></div>
         <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-4 text-[11px] text-slate-400 md:px-8">
-          <p>Ba-rem 10 nhóm tiêu chí · Dữ liệu client-side từ Phần 1</p>
+          <p>Ba-rem ${CRITERIA_COUNT} tiêu chí · ${GROUP_COUNT} nhóm · Điểm chấm từ backend WEBCHECK AI</p>
           <p>Part 3 · AI Review Engine</p>
         </footer>
       </section>
@@ -110,12 +126,13 @@ Part3Review.prototype.renderShell = function() {
     this.bodyEl = this.container.querySelector('[data-p3-body]');
 };
 
-// Render criteria strip
+// Render criteria strip — 7 nhóm tiêu chí với số mục mỗi nhóm
 Part3Review.prototype._renderCriteriaStrip = function() {
-  const items = Object.entries(CRITERIA_MAP).map(([key, meta]) => {
-    return `<span class="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200" title="${meta.label}"><span class="h-1.5 w-1.5 rounded-full ${CRITERIA_MAP[key].accent === 'emerald' ? 'bg-emerald-400' : CRITERIA_MAP[key].accent === 'cyan' ? 'bg-cyan-400' : CRITERIA_MAP[key].accent === 'violet' ? 'bg-violet-400' : CRITERIA_MAP[key].accent === 'indigo' ? 'bg-indigo-400' : CRITERIA_MAP[key].accent === 'slate' ? 'bg-slate-400' : 'bg-amber-400'}"></span>${meta.label}</span>`;
+  return CRITERIA_GROUPS.map((group, index) => {
+    const count = CRITERIA_META.filter((criterion) => criterion.group === group).length;
+    const dotColors = ['bg-indigo-400', 'bg-cyan-400', 'bg-emerald-400', 'bg-violet-400', 'bg-amber-400', 'bg-rose-400', 'bg-sky-400'];
+    return `<span class="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200" title="Nhóm ${group} — ${count} tiêu chí"><span class="h-1.5 w-1.5 rounded-full ${dotColors[index % dotColors.length]}"></span>${group} · ${count}</span>`;
   }).join('');
-  return items;
 };
 
 // Set status display
@@ -146,17 +163,17 @@ Part3Review.prototype.setStatus = function(tone, title, sub, badge) {
 Part3Review.prototype.renderIdle = function() {
   if (!this.bodyEl) return;
   this.result = null;
-  this.setStatus('idle', 'AI đối chiếu Ba-rem chuyên sâu', 'Sẵn sàng nhận dữ liệu quét từ Phần 1.', 'Sẵn sàng');
+  this.setStatus('idle', 'AI đối chiếu Ba-rem chuyên sâu', 'Sẵn sàng đón kết quả chấm của bộ máy 60 tiêu chí.', 'Sẵn sàng');
   this.bodyEl.innerHTML = `
     <div class="space-y-4">
       <div class="p-4 rounded-xl border border-slate-200 bg-white text-center">
         <svg class="mx-auto mb-3 h-12 w-12 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V5"/><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M9 13h.01M15 13h.01"/><path d="M9 16h6"/></svg>
-        <h3 class="mt-4 text-lg font-bold text-slate-900">Chờ dữ liệu từ Phần 1</h3>
-        <p class="text-sm text-slate-500 max-w-xl mx-auto">Khi quá trình quét client-side hoàn tất, dữ liệu sẽ được gửi tới AI để phân tích Ba-rem.</p>
+        <h3 class="mt-4 text-lg font-bold text-slate-900">Chờ kết quả phân tích</h3>
+        <p class="text-sm text-slate-500 max-w-xl mx-auto">Khi lần phân tích hoàn tất, điểm theo ba-rem và nhận xét ba-rem từ AI/bộ quy tắc sẽ hiển thị tại đây.</p>
       </div>
       <div class="p-4 rounded-xl border border-slate-200 bg-slate-50">
-        <p class="text-sm text-slate-600">Hỗ trợ 10 nhóm tiêu chí: UI, UX, Content, Branding, Marketing, SEO, Performance, Responsive, Security, Trust</p>
-        <p class="mt-2 text-[11px] text-slate-400">AI sẽ trả về: 03 điểm sáng + 03 điểm cần cải thiện + đánh giá chiến lược</p>
+        <p class="text-sm text-slate-600">Ba-rem ${CRITERIA_COUNT} tiêu chí chia ${GROUP_COUNT} nhóm: ${CRITERIA_GROUPS.join(' · ')}</p>
+        <p class="mt-2 text-[11px] text-slate-400">Nhận xét sẽ trả về: 3 điểm sáng + 3 điểm cần cải thiện, ưu tiên tiêu chí trọng số cao.</p>
       </div>
     </div>
   `;
@@ -165,7 +182,7 @@ Part3Review.prototype.renderIdle = function() {
 // Set loading state
 Part3Review.prototype.setLoading = function() {
   if (!this.bodyEl) return;
-  this.setStatus('loading', 'AI đang đối chiếu Ba-rem chuyên sâu...', 'Đang chuẩn hoá dữ liệu quét từ Phần 1…', 'Đang phân tích');
+  this.setStatus('loading', 'AI đang đối chiếu Ba-rem chuyên sâu…', 'Đang tổng hợp nhận xét theo ba-rem…', 'Đang phân tích');
   this.bodyEl.innerHTML = `
     <div class="p-6 rounded-3xl border border-indigo-200 bg-indigo-50/30 text-center">
       <div class="relative grid h-16 w-16 place-items-center">
@@ -174,8 +191,8 @@ Part3Review.prototype.setLoading = function() {
         <span class="text-indigo-600">🤖</span>
       </div>
       <div>
-        <p class="text-lg font-bold text-slate-900 mt-4">AI đang đối chiếu Ba-rem chuyên sâu...</p>
-        <p data-p3-loading-text class="mt-1 text-sm text-slate-500">Đang chuẩn hoá dữ liệu quét từ Phần 1…</p>
+        <p class="text-lg font-bold text-slate-900 mt-4">AI đang đối chiếu Ba-rem chuyên sâu…</p>
+        <p data-p3-loading-text class="mt-1 text-sm text-slate-500">Đang tổng hợp nhận xét theo ba-rem…</p>
       </div>
       <div class="mt-3 flex items-center gap-1.5">
         ${this._renderCriteriaStrip()}
@@ -195,8 +212,8 @@ Part3Review.prototype.setLoading = function() {
 Part3Review.prototype.startStatusRotation = function() {
   this.stopStatusRotation();
   const messages = [
-    'Đang chuẩn hoá dữ liệu quét từ Phần 1…',
-    'Đang đối chiếu 10 nhóm tiêu chí Ba-rem…',
+    'Đang tổng hợp nhận xét theo ba-rem trọng số…',
+    `Đang đối chiếu ${CRITERIA_COUNT} tiêu chí theo ${GROUP_COUNT} nhóm…`,
     'Đang kiểm chứng bằng chứng quan sát được…',
     'Đang tổng hợp 03 điểm sáng & 03 điểm cần cải thiện…'
   ];
@@ -223,7 +240,7 @@ Part3Review.prototype.renderError = function(message, kind) {
     <div class="p-6 rounded-3xl border border-rose-200 bg-rose-50/60 text-center">
       <svg class="mx-auto mb-4 h-12 w-12 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/><path d="M12 18v6l4-2"/><path d="M5 6l6 6"/><path d="M19 6l-6 6"/></svg>
       <h3 class="mt-4 text-lg font-bold text-slate-900">Chưa thể hoàn tất phân tích</h3>
-      <p class="mt-2 max-w-xl mx-auto text-sm leading-6 text-slate-600">${message}</p>
+      <p class="mt-2 max-w-xl mx-auto text-sm leading-6 text-slate-600">${esc(message)}</p>
       <div class="mt-4">
         <button data-p3-action="retry" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
@@ -250,8 +267,8 @@ Part3Review.prototype.renderSuccess = function(result) {
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <span class="text-[11px] font-bold tracking-widest text-emerald-500">#${String(i + 1).padStart(2, '0')}</span>
-              ${CRITERIA_MAP[result.strengths[i]?.criterion] 
-                ? `<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ${CRITERIA_MAP[result.strengths[i]?.criterion].accent === 'emerald' ? 'bg-emerald-500' : 'bg-indigo-500'}"><span class="h-1 w-1 rounded-full ${CRITERIA_MAP[result.strengths[i]?.criterion].accent === 'emerald' ? 'bg-emerald-500' : 'bg-indigo-500'}"></span>${CRITERIA_MAP[result.strengths[i]?.criterion].label}</span>`
+              ${result.strengths[i]?.criterion 
+                ? `<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">${result.strengths[i].criterion}</span>`
                 : ''}
             </div>
             <h4 class="mt-2 text-[13px] font-semibold leading-6 text-slate-900">${result.strengths[i]?.title || 'Chưa có tiêu đề'}</h4>
@@ -271,8 +288,8 @@ Part3Review.prototype.renderSuccess = function(result) {
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
               <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ${SEVERITY_MAP[imp.severity]?.badge || SEVERITY_MAP.high.badge}"><span class="h-1.5 w-1.5 rounded-full ${SEVERITY_MAP[imp.severity]?.dot || SEVERITY_MAP.high.dot}"></span>${SEVERITY_MAP[imp.severity]?.label || 'Cao'}</span>
-              ${CRITERIA_MAP[imp.criterion] 
-                ? `<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ${CRITERIA_MAP[imp.criterion].accent === 'emerald' ? 'bg-emerald-500' : 'bg-indigo-500'}"><span class="h-1 w-1 rounded-full ${CRITERIA_MAP[imp.criterion].accent === 'emerald' ? 'bg-emerald-500' : 'bg-indigo-500'}"></span>${CRITERIA_MAP[imp.criterion].label}</span>`
+              ${imp.criterion 
+                ? `<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200">${imp.criterion}</span>`
                 : ''}
               <span class="ml-auto text-[10px] font-bold tracking-widest text-amber-500">#${String(i + 1).padStart(2, '0')}</span>
             </div>
@@ -287,7 +304,7 @@ Part3Review.prototype.renderSuccess = function(result) {
   
   const limitationsHtml = result.limitations.length
     ? `<ul class="mt-4 space-y-2.5">${result.limitations.map(lim => `<li class="flex items-start gap-2.5 text-sm leading-6 text-slate-600"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span><span>${lim}</span></li>`).join('')}</ul>`
-    : `<div class="mt-4 flex items-start gap-2.5 rounded-xl bg-emerald-50 p-3 text-sm leading-6 text-emerald-700 ring-1 ring-emerald-100"><svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg><span>Đủ dữ liệu để đánh giá toàn bộ 10 nhóm tiêu chí trong lần quét này.</span></div>`;
+    : `<div class="mt-4 flex items-start gap-2.5 rounded-xl bg-emerald-50 p-3 text-sm leading-6 text-emerald-700 ring-1 ring-emerald-100"><svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg><span>Đủ dữ liệu để đánh giá toàn bộ ${GROUP_COUNT} nhóm tiêu chí trong lần phân tích này.</span></div>`;
   
   const adviceHtml = result.strategicAdvice ? `
     <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -323,6 +340,81 @@ Part3Review.prototype.renderSuccess = function(result) {
   `;
 };
 
+// Hiển thị trạng thái chờ khi đã có điểm nhưng nhận xét chưa xong
+Part3Review.prototype.renderWaiting = function(message) {
+  if (!this.bodyEl) return;
+  this.stopStatusRotation();
+  this.setStatus('loading', 'Bộ nhận xét đang hoàn tất', message || 'Đang tổng hợp nhận xét…', 'Đang xử lý');
+  this.bodyEl.innerHTML = `
+    <div class="p-6 rounded-3xl border border-indigo-200 bg-indigo-50/30 text-center">
+      <div class="relative mx-auto grid h-14 w-14 place-items-center">
+        <span class="absolute inset-0 rounded-full border-4 border-indigo-100"></span>
+        <span class="p3-spin absolute inset-0 rounded-full border-4 border-transparent border-t-indigo-600"></span>
+        <span class="text-indigo-600">🤖</span>
+      </div>
+      <p class="mt-3 text-base font-bold text-slate-900">Đã chấm xong ba-rem ${CRITERIA_COUNT} tiêu chí</p>
+      <p class="mt-1 text-sm text-slate-500">${esc(message) || 'Đang tổng hợp nhận xét…'}</p>
+      <div class="mt-3 flex flex-wrap justify-center gap-1.5">${this._renderCriteriaStrip()}</div>
+    </div>
+  `;
+};
+
+// Nguồn dữ liệu thật: kết quả chấm + nhận xét của backend (AI hoặc bộ quy tắc)
+Part3Review.prototype.analyzeFromReport = function(input) {
+  const analysis = input?.analysis && typeof input.analysis === 'object' ? input.analysis : null;
+  const review = input?.review && typeof input.review === 'object' ? input.review : null;
+  const url = input?.url || analysis?.finalUrl || analysis?.url || '';
+
+  if (!analysis || !review) {
+    const message = 'Chưa đủ dữ liệu phân tích để hiển thị. Hãy phân tích lại website.';
+    this.renderError(message, 'data');
+    this.container.dispatchEvent(new CustomEvent('part3:error', { detail: { message } }));
+    return Promise.reject(new Error('Missing analysis review'));
+  }
+
+  const criterionNameById = new Map(
+    (Array.isArray(analysis.criteria) ? analysis.criteria : []).map((criterion) => [criterion.id, criterion.name || criterion.id]),
+  );
+
+  const strengths = (review.strengths || []).slice(0, 3).map((item) => ({
+    criterion: criterionNameById.get(item.criterionId) || item.criterionId || 'Tổng thể',
+    title: item.title || 'Chưa có tiêu đề',
+    evidence: item.why || 'Không có bằng chứng quan sát',
+    impact: item.benefit || 'Chưa có đánh giá tác động',
+  }));
+
+  const improvements = (review.improvements || []).slice(0, 3).map((item) => {
+    const severityKey = SEVERITY_FROM_PRIORITY[item.priority] || 'medium';
+    return {
+      criterion: criterionNameById.get(item.criterionId) || item.criterionId || 'Tổng thể',
+      severity: severityKey,
+      title: item.title || 'Chưa có tiêu đề',
+      evidence: item.problem || 'Không có bằng chứng quan sát',
+      consequence: item.impact || 'Chưa có hệ quả',
+      solution: item.solution || 'Chưa có giải pháp',
+    };
+  });
+
+  const limitations = [];
+  if (review.notice) limitations.push(review.notice);
+  if (review.dataNotes) limitations.push(review.dataNotes);
+
+  const payload = {
+    url,
+    strengths,
+    improvements,
+    limitations: limitations.filter(Boolean).slice(0, 5),
+    strategicAdvice: review.summary || '', // sẽ được esc() ở _normalizeResult
+    meta: { demo: false, model: review.model || 'rule-based' },
+  };
+
+  const normalized = this._normalizeResult(payload, url);
+  this.result = normalized;
+  this.renderSuccess(normalized);
+  this.container.dispatchEvent(new CustomEvent('part3:complete', { detail: { result: normalized } }));
+  return Promise.resolve(normalized);
+};
+
 // Analyze function - main entry point
 Part3Review.prototype.analyze = async function(input) {
   if (!this.mounted || !this.container) {
@@ -341,7 +433,7 @@ Part3Review.prototype.analyze = async function(input) {
   // If no scan data provided, try to get from existing analysis
   if (!scanData) {
     // Try to get from window.__WEBCHECK_ANALYSIS__
-    if (window.__WEBCHECK_ANALYSIS__ && window.__WEBCHECK_ANALYS__?.criteria) {
+    if (window.__WEBCHECK_ANALYSIS__?.criteria) {
       scanData = JSON.stringify(window.__WEBCHECK_ANALYSIS__);
     }
   }
@@ -371,7 +463,7 @@ Part3Review.prototype.analyze = async function(input) {
       '- improvements: mảng có 03 mục, mỗi mục có criterion, severity (cao/trung bình/thấp), title (tiêu đề), evidence (bằng chứng), consequence (hệ quả), solution (giải pháp thực thi)',
       '- strategicAdvice: 3-5 câu lời khuyên chiến lược dựa trên tác động và chi phí',
       '- limitations: mảng các hạng mục chưa đủ dữ liệu để đánh giá',
-      '- evaluatedCriteria: mảng 10 tiêu chí đánh dấu evaluated hoặc limited',
+      '- evaluatedCriteria: đánh dấu trạng thái evaluated hoặc limited cho từng nhóm tiêu chí',
       '',
       'QUAN TRỌNG: Chỉ phân tích dựa trên dữ liệu client-side nằm trong khối <du_lieu_quet>. Không truy cập internet, không tự suy đoán, không bịa đặt số liệu hay quan sát. Viết tiếng Việt.',
       '',
@@ -401,7 +493,6 @@ Part3Review.prototype.analyze = async function(input) {
     this.controller = controller;
     
     const timeoutId = setTimeout(() => controller.abort(), config.timeoutMs);
-    timer.unref?.();
     
     const endpoint = config.endpoint || PART3_CONFIG.endpoint;
     const headers = { 'Content-Type': 'application/json' };
@@ -490,10 +581,10 @@ Part3Review.prototype._normalizeResult = function(raw, fallbackUrl) {
     .map(item => {
       const criterion = item?.criterion || 'overall';
       return {
-        criterion: CRITERIA_MAP[criterion]?.label || criterion,
-        title: item?.title || 'Chưa có tiêu đề',
-        evidence: item?.evidence || 'Không có bằng chứng quan sát',
-        impact: item?.impact || 'Chưa có đánh giá tác động'
+        criterion: esc(criterionLabel(criterion)),
+        title: esc(item?.title || 'Chưa có tiêu đề'),
+        evidence: esc(item?.evidence || 'Không có bằng chứng quan sát'),
+        impact: esc(item?.impact || 'Chưa có đánh giá tác động')
       };
     });
   
@@ -504,36 +595,35 @@ Part3Review.prototype._normalizeResult = function(raw, fallbackUrl) {
       const criterion = item?.criterion || 'overall';
       const severity = item?.severity || 'medium';
       return {
-        criterion: CRITERIA_MAP[criterion]?.label || criterion,
+        criterion: esc(criterionLabel(criterion)),
         severity: SEVERITY_MAP[severity]?.label || SEVERITY_MAP.high.label,
-        title: item?.title || 'Chưa có tiêu đề',
-        evidence: item?.evidence || 'Không có bằng chứng quan sát',
-        consequence: item?.consequence || 'Chưa có hệ quả',
-        solution: item?.solution || 'Chưa có giải pháp'
+        title: esc(item?.title || 'Chưa có tiêu đề'),
+        evidence: esc(item?.evidence || 'Không có bằng chứng quan sát'),
+        consequence: esc(item?.consequence || 'Chưa có hệ quả'),
+        solution: esc(item?.solution || 'Chưa có giải pháp')
       };
     });
   
   // Limitations
   const limitations = (source.limitations || [])
     .filter(Boolean)
-    .map(l => l.trim())
+    .map(l => esc(l.trim()))
     .slice(0, 5);
   
-  // Evaluated criteria
+  // Evaluated criteria (nhóm của ba-rem, dùng để ghi chú nhóm thiếu dữ liệu)
   const evaluatedCriteria = (source.evaluatedCriteria || [])
     .map(item => {
       const key = item?.key || 'overall';
-      const meta = CRITERIA_MAP[key] || { label: key, icon: 'target', accent: 'slate' };
       return {
         key,
-        label: meta.label,
+        label: CRITERIA_BY_ID.get(String(key))?.name || key,
         status: item?.status === 'evaluated' ? 'evaluated' : 'limited',
         note: item?.note || ''
       };
     });
   
   // Strategic advice
-  const strategicAdvice = source?.strategicAdvice || source?.advice || source?.summary || '';
+  const strategicAdvice = esc(source?.strategicAdvice || source?.advice || source?.summary || '');
   
   // URL
   const url = source?.url || fallbackUrl || '';
@@ -564,4 +654,4 @@ function initPart3(container, options) {
   return review;
 }
 
-export { Part3Review, initPart3, PART3_CONFIG, CRITERIA_MAP, SEVERITY_MAP };
+export { Part3Review, initPart3, PART3_CONFIG, SEVERITY_MAP };

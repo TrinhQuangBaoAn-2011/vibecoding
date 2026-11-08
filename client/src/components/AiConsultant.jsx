@@ -67,7 +67,7 @@ export function AiConsultant({
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 {aiStatusDisplay === 'pending'
-                  ? 'Đang xử lý AI...'
+                  ? 'Đang xử lý AI…'
                   : aiStatusDisplay === 'done'
                     ? 'AI đã hoàn thành'
                     : aiStatusDisplay === 'skipped'
@@ -102,7 +102,7 @@ export function AiConsultant({
           </div>
         ) : (
           <p className="mt-3 text-sm text-muted-foreground">
-            Chưa có nhận xét AI. Phân tích 10 tiêu chí đã hoàn tất.
+            Chưa có nhận xét AI. Phân tích 60 tiêu chí đã hoàn tất.
           </p>
         )}
 

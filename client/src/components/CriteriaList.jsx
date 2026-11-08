@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronRight, ListChecks } from 'lucide-react';
-import { getStatusMeta } from '../lib/constants.js';
+import { getPriorityMeta, getStatusMeta } from '../lib/constants.js';
 import { StatusBadge, StatusIcon } from './StatusBadge.jsx';
 import { CriterionModal } from './CriterionModal.jsx';
 
@@ -8,7 +8,7 @@ const FILTERS = [
   { key: 'all', label: 'Tất cả' },
   { key: 'pass', label: 'Đạt' },
   { key: 'fail', label: 'Chưa đạt' },
-  { key: 'warning', label: 'Cần xem xét' },
+  { key: 'warning', label: 'Cần cải thiện' },
   { key: 'other', label: 'Không tính điểm' },
 ];
 
@@ -51,8 +51,10 @@ export function CriteriaList({ criteria = [] }) {
             <ListChecks className="h-5 w-5" />
           </span>
           <div>
-            <h2 className="text-base font-bold text-ink-900">Chi tiết 10 tiêu chí</h2>
-            <p className="mt-0.5 text-xs text-ink-500">Chọn từng tiêu chí để xem bằng chứng và đề xuất.</p>
+            <h2 className="text-base font-bold text-ink-900">Chi tiết 60 tiêu chí</h2>
+            <p className="mt-0.5 text-xs text-ink-500">
+              Chọn từng tiêu chí để xem bằng chứng, trọng số và đề xuất.
+            </p>
           </div>
         </div>
         <span className="badge bg-emerald-50 text-emerald-700">
@@ -87,6 +89,7 @@ export function CriteriaList({ criteria = [] }) {
       <div className="divide-y divide-ink-100">
         {visible.map((criterion) => {
           const meta = getStatusMeta(criterion.status);
+          const priority = getPriorityMeta(criterion.criticality || criterion.priority);
           const excluded = ['na', 'untestable'].includes(criterion.status);
           const max = Number(criterion.maxPoints) || 0;
           const points = Number(criterion.points) || 0;
@@ -112,6 +115,12 @@ export function CriteriaList({ criteria = [] }) {
                     showIcon={false}
                     className="!px-2 !py-0.5 !text-[10px]"
                   />
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ring-1 ring-inset ${priority.badge}`}
+                    title={`Trọng số ${priority.weight} điểm thô — mức ưu tiên ${priority.label}`}
+                  >
+                    {criterion.criticality || criterion.priority || 'P2'} · {priority.weight}đ
+                  </span>
                   {excluded && (
                     <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
                       Không tính vào điểm

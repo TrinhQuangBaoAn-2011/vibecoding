@@ -23,9 +23,9 @@ import { initPart3, Part3Review } from '../lib/part3Review.js';
 import { WEBCHECK } from '../lib/webcheckClient.js';
 
 const DELIVERABLES = [
-  { icon: TrendingUp, title: 'Điểm tổng kết trên thang 100', description: 'Chuẩn hóa sau khi loại tiêu chí Không áp dụng hoặc Không thể kiểm tra.' },
-  { icon: Target, title: '10 tiêu chí kèm bằng chứng', description: 'Mỗi tiêu chí có giá trị ghi nhận, nhận định và đề xuất cụ thể.' },
-  { icon: Bot, title: 'Nhận xét AI bằng tiếng Việt', description: 'Tối đa 3 điểm mạnh và 3 việc cần cải thiện theo mức ưu tiên.' },
+  { icon: TrendingUp, title: 'Điểm tổng kết trên thang 100', description: 'Chuẩn hóa sau khi loại tiêu chí Không xác định hoặc Không áp dụng.' },
+  { icon: Target, title: '60 tiêu chí kèm bằng chứng', description: 'Mỗi tiêu chí có trọng số theo mức ưu tiên, giá trị ghi nhận, nhận định và đề xuất cụ thể.' },
+  { icon: Bot, title: 'Nhận xét AI bằng tiếng Việt', description: 'Tối đa 3 điểm mạnh và 3 việc cần cải thiện, ưu tiên theo trọng số P0–P3.' },
   { icon: History, title: 'Tự động lưu vào lịch sử', description: 'So sánh điểm giữa các lần kiểm tra và xem lại báo cáo bất cứ lúc nào.' },
 ];
 
@@ -100,28 +100,36 @@ export function Analyze() {
   // Initialize Part 3 Review
   useEffect(() => {
     const container = document.querySelector('#part3-review-container');
-    if (container) {
-      const part3 = initPart3(container, {
-        endpoint: '/api/ai-review',
-        model: 'gpt-4o-mini',
+    if (!container) return undefined;
+    const part3 = initPart3(container, {
+      endpoint: '/api/ai-review',
+      model: 'gpt-4o-mini',
+    });
+
+    if (analysis && review) {
+      // Nhận xét đã có từ backend (AI hoặc bộ quy tắc) → hiển thị trực tiếp
+      // trên panel Phần 3, không gọi lại API để tránh tạo thêm lượt AI.
+      part3.analyzeFromReport({
+        url: analysis.requestedUrl || analysis.url || analysis.finalUrl,
+        analysis,
+        review,
       });
-      
-      if (analysis && part3) {
-        const scanData = analysis.scanData || window.__WEBCHECK_ANALYSIS__;
-        part3.analyze({
-          url: analysis.requestedUrl || analysis.url,
-          scanData: scanData,
-        });
-      }
-      
-      part3.container.addEventListener('part3:complete', (e) => {
-        console.log('Part 3 analysis complete', e.detail);
-      });
-      part3.container.addEventListener('part3:error', (e) => {
-        console.log('Part 3 analysis error', e.detail);
-      });
+    } else if (analysis) {
+      part3.renderWaiting('Điểm đã hoàn tất — nhận xét đang được tổng hợp…');
+    } else {
+      part3.renderIdle();
     }
-  }, [analysis]);
+
+    const onComplete = (e) => console.debug('Part 3 analysis complete', e.detail);
+    const onError = (e) => console.debug('Part 3 analysis error', e.detail);
+    container.addEventListener('part3:complete', onComplete);
+    container.addEventListener('part3:error', onError);
+    return () => {
+      container.removeEventListener('part3:complete', onComplete);
+      container.removeEventListener('part3:error', onError);
+      part3.stopStatusRotation?.();
+    };
+  }, [analysis, review]);
 
   // Initialize WebCheck client-side checking
   useEffect(() => {
@@ -190,8 +198,8 @@ export function Analyze() {
             Phân tích website
           </h1>
           <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-500">
-            Nhập URL công khai để backend tải HTML thật, chấm 10 tiêu chí và tạo nhận xét tiếng Việt.
-            Kết quả được lưu tự động vào lịch sử trình duyệt.
+            Nhập URL công khai để backend tải HTML thật, chấm đủ 60 tiêu chí theo trọng số và tạo
+            nhận xét tiếng Việt. Kết quả được lưu tự động vào lịch sử trình duyệt.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-ink-500">
@@ -222,7 +230,7 @@ export function Analyze() {
               <AlertCircle className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-sm font-bold text-rose-800">Không thể hoàn tán phân tích</p>
+              <p className="text-sm font-bold text-rose-800">Không thể hoàn tất phân tích</p>
               <p className="mt-1 text-sm leading-relaxed text-rose-700">{error.message}</p>
               {error.code && (
                 <p className="mt-1.5 font-mono text-[10px] uppercase tracking-wide text-rose-500">
@@ -286,7 +294,7 @@ export function Analyze() {
               {[
                 'Kiểm tra URL, giao thức, cổng và chặn địa chỉ nội bộ.',
                 'Kết nối HTTPS/HTTP, theo dõi chuyển hướng và tải tối đa 3 MB HTML.',
-                'Phân tích 10 tiêu chí bằng Cheerio và tính điểm chuẩn hóa.',
+                'Phân tích 60 tiêu chí bằng bộ máy WEBCHECK v2.0, tính điểm theo trọng số P0–P3.',
                 'Gửi dữ liệu đã lọc sang AI hoặc dùng bộ quy tắc dự phòng minh bạch.',
               ].map((item, index) => (
                 <li key={item} className="flex items-start gap-2.5">
@@ -337,10 +345,10 @@ export function Analyze() {
           <section className="card p-5 sm:p-6">
             <h2 className="text-base font-bold text-ink-900">Phần 3: AI đánh giá & nhận xét</h2>
             <p className="mt-1 text-sm leading-relaxed text-ink-500">
-              Dữ liệu quét website sẽ được gửi tới AI để phân tích 03 điểm mạnh và 03 điểm cần cải thiện.
+              Dữ liệu quét website sẽ được gửi tới AI để phân tích 3 điểm mạnh và 3 điểm cần cải thiện.
             </p>
-            <div id="part3-review-container" className="mt-4 p-4 rounded-xl border border-indigo-200 bg-indigo-50/50 min-h-400">
-              <p className="text-sm text-indigo-600">Đang khởi tạo phần Phân tích Phần 3...</p>
+            <div id="part3-review-container" className="mt-4 min-h-[160px] rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
+              <p className="text-sm text-indigo-600">Đang khởi tạo panel Phần 3…</p>
             </div>
           </section>
         </div>
@@ -349,31 +357,31 @@ export function Analyze() {
       {!analysis && status === 'ai-pending' && (
         <div className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-brand-50/60 px-4 py-3 text-sm text-brand-700">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
-          Điểm số đã sẵn sàng. AI đang hoàn thiện phần nhận xét...
+          Điểm số đã sẵn sàng. AI đang hoàn thiện phần nhận xét…
         </div>
       )}
 
-      {/* WebCheck Client-Side Checking Section */}
+      {/* WebCheck client-side quick check */}
       <section className="grid gap-5 lg:grid-cols-2">
         <section className="card p-5 sm:p-6">
-          <h2 className="text-base font-bold text-ink-900">Phần 1: Kiểm tra nhanh 22 hạng mục</h2>
+          <h2 className="text-base font-bold text-ink-900">Phần 1: Kiểm tra nhanh ngay trên trình duyệt</h2>
           <p className="mt-1 text-sm leading-relaxed text-ink-500">
-            Dữ liệu quét website phía client, bao gồm 22 hạng mục nền móng: tiêu đề, mô tả, viewport, favicon, hình ảnh alt, liên kết, robots.txt, sitemap.xml và tốc độ tải.
+            60 hạng mục nền tảng chấm nhanh theo 4 trạng thái (chưa tính điểm tổng): tiêu đề, mô tả,
+            viewport, favicon, hình ảnh alt, liên kết, robots.txt, sitemap.xml và tốc độ tải.
           </p>
-          <div id="webcheck-checklist-container" className="mt-4 p-4 rounded-xl border border-indigo-200 bg-indigo-50/30 min-h-400">
-            <p className="text-sm text-indigo-600">Đang kiểm tra URL... Vui lòng chờ片刻.</p>
+          <div id="webcheck-checklist-container" className="mt-4 min-h-[120px] rounded-xl border border-indigo-200 bg-indigo-50/30 p-4">
+            <p className="text-sm text-indigo-600">Đang kiểm tra URL — vui lòng đợi trong giây lát…</p>
           </div>
-          <div id="webcheck-summary" className="mt-3 p-2 rounded-xl border border-indigo-200 bg-indigo-50/30 text-sm text-indigo-600"></div>
+          <div id="webcheck-summary" className="mt-3 rounded-xl border border-indigo-200 bg-indigo-50/30 p-2 text-sm text-indigo-600"></div>
         </section>
 
         <section className="card p-5 sm:p-6">
-          <h2 className="text-base font-bold text-ink-900">Phần 2: 10 tiêu chí WEBCheck AI</h2>
+          <h2 className="text-base font-bold text-ink-900">Phần 2: Ba-rem chấm điểm WEBCHECK AI</h2>
           <p className="mt-1 text-sm leading-relaxed text-ink-500">
-            Điểm số thang 100 với trọng số: Title(15), Meta(15), Viewport(10), Favicon(5), H1(10), HTTPS(10), Image Alt(10), Language(5), Canonical(5), Open Graph(15).
+            Bộ máy v2.0 chấm đủ 60 tiêu chí theo trọng số mức ưu tiên: P0 đắt nhất (6 điểm thô) →
+            P1 (4) → P2 (2) → P3 (1), chuẩn hóa về thang 100 và loại tiêu chí Không xác định khỏi
+            mẫu số. Báo cáo đầy đủ kèm bằng chứng hiển thị ngay sau khi phân tích hoàn tất.
           </p>
-          <div id="webcheck-criteria-list" className="mt-4 space-y-2">
-            {/* Criteria will be rendered by the AnalysisReport component */}
-          </div>
         </section>
       </section>
     </div>
