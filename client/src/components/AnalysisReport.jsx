@@ -161,12 +161,9 @@ export function AnalysisReport({
 
       <ScoreSummary analysis={analysis} comparison={comparison} />
 
-      <RoadmapPanel criteria={analysis.criteria || []} />
-
-      <CriteriaList criteria={analysis.criteria || []} />
-
-      {comparison && <ComparisonCard comparison={comparison} />}
-
+      {/* Nhận xét AI đứng ngay sau điểm — phần tóm tắt dễ đọc nhất cho chủ doanh nghiệp,
+        * lộ trình + chi tiết 60 mục là "lớp đi sâu", bấm mới mở để trang không thành
+        * một cột dài gây nản (chuẩn "đọc lướt được" trong phiếu phân công). */}
       <AiConsultant
         review={effectiveReview}
         status={aiStatus}
@@ -174,6 +171,12 @@ export function AnalysisReport({
         onRetryAi={onRetryAi}
         analysis={analysis}
       />
+
+      <RoadmapPanel criteria={analysis.criteria || []} />
+
+      <CriteriaList criteria={analysis.criteria || []} />
+
+      {comparison && <ComparisonCard comparison={comparison} />}
 
       <p className="text-center text-xs text-muted-foreground">
         Báo cáo được tạo bởi WEBCHECK AI từ dữ liệu HTML thực tế. Điểm số theo bộ tiêu chí cơ bản,
