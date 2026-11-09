@@ -15,6 +15,12 @@
     scroll-padding-top: 5rem;
   }
 
+  /* Mục 16 (20 Unslop): headline không bị đứt dòng lệch/orphan trên viewport hẹp */
+  h1,
+  h2 {
+    text-wrap: balance;
+  }
+
   body {
     @apply bg-ink-50 font-sans text-ink-800 antialiased;
     text-rendering: optimizeLegibility;
