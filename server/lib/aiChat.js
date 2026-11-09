@@ -240,7 +240,17 @@ QUY TẮC BẮT BUỘC:
 5. Chưa được kiểm tra = chưa biết. Nếu câu hỏi cần dữ liệu v2.0 không có, nói rõ "dữ liệu phân tích chưa đo mục này".
 6. Trả lời dưới 5 câu (khi liệt kê thì tối đa 3 gạch đầu dòng), cụ thể, dễ hiểu, nêu đích danh tên tiêu chí khi liên quan.
 7. Nếu câu hỏi ngoài phạm vi dữ liệu (ví dụ: đối thủ, thị trường, xu hướng), lịch sự từ chối và nêu rõ Nino chỉ trả lời dựa trên báo cáo phân tích này.
-8. Không dùng markdown phức tạp; chỉ dùng "•" khi cần gạch đầu dòng và xuống dòng thường.`;
+8. KHÔNG dùng cú pháp markdown nào cả: không **đậm**, không *nghiêng*, không \`code\`, không # tiêu đề, không bảng. Chỉ dùng "-" hoặc "•" khi cần gạch đầu dòng, xuống dòng thường.`;
+
+/* Ai có thể vẫn ngắt ra cặp sao-đậm (md đậm) và tiêu đề-hash bất chấp rule 8 — UI chat là plaintext,
+ * dọn sạch cú pháp markdown để người nhìn không thấy dấu sao. */
+function stripMarkdown(text) {
+  return String(text || '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/(^|\s)\*([^*\s][^*]*)\*/g, '$1$2')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/`([^`]*)`/g, '$1');
+}
 
 function buildChatMessages(analysis, question, history) {
   const dataJson = JSON.stringify(buildChatData(analysis));
@@ -315,7 +325,7 @@ async function callAi(analysis, question, history) {
   if (Array.isArray(content)) {
     content = content.map((part) => (typeof part === 'string' ? part : part?.text || '')).join('');
   }
-  const reply = safeText(content, MAX_RULES_REPLY * 2);
+  const reply = safeText(stripMarkdown(content), MAX_RULES_REPLY * 2);
   if (reply.length < 2) {
     throw new AppError('AI không trả về nội dung câu trả lời hợp lệ.', {
       status: 502,
