@@ -67,6 +67,18 @@ if (hasClientBuild) {
   // SPA nuốt mất. index mặc định ('index.html') để /webcheck/ mở đúng trang.
   app.use('/webcheck', express.static(path.join(config.clientDist, 'webcheck'), { maxAge: '1h' }));
   app.use(express.static(config.clientDist, { index: false, maxAge: '1h' }));
+  // Asset build không tồn tại trong bản deploy hiện tại (trình duyệt giữ HTML cũ
+  // sau khi deploy mới đổi tên hash) → 404 JSON mạch lạc. KHÔNG rơi xuống SPA
+  // fallback: trả HTML cho yêu cầu .js/.css làm trình duyệt báo "module MIME
+  // mismatch" và trang trắng không lời giải thích — trục lỗi trắng sau deploy.
+  app.get('/assets/*', (req, res) => {
+    res.status(404).json({
+      error: {
+        code: 'ASSET_NOT_FOUND',
+        message: 'Asset này thuộc bản build khác. Tải lại trang để dùng bản mới.',
+      },
+    });
+  });
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     // Chống "trang trắng sau deploy": HTML luôn bảo trình duyệt xác thực lại

@@ -10,9 +10,212 @@
     <meta name="theme-color" content="#2563eb" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>WEBCHECK AI – Understand Your Website. Improve Your Marketing.</title>
+    <style>
+      /* Màn hình chờ tĩnh (boot splash): hiện ngay khi HTML mở, trước khi bundle
+         JS kịp tải — chống "trang trắng" khi mạng chậm (4G) hoặc máy yếu.
+         Tự xoá khi React mount xong (main.jsx gọi window.__wbDone()).
+         Chỉ dùng màu nền tảng + ES5 để chạy được cả trên trình duyệt cũ. */
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: #f8fafc;
+        color: #334155;
+        font:
+          14px/1.6 system-ui,
+          -apple-system,
+          sans-serif;
+        text-align: center;
+      }
+      #boot-splash .wb-logo {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        background: #2563eb;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+      }
+      #boot-splash .wb-spin {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2.5px solid #cbd5e1;
+        border-top-color: #2563eb;
+        animation: wb-spin 0.8s linear infinite;
+      }
+      #boot-splash .wb-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 3px;
+        width: 0;
+        background: #2563eb;
+        animation: wb-bar 6s ease-out forwards;
+      }
+      #boot-splash .wb-hint {
+        font-size: 12px;
+        color: #94a3b8;
+      }
+      #boot-splash .wb-recover {
+        max-width: 26rem;
+        margin: 0 1.25rem;
+        padding: 1.5rem 1.25rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.35);
+      }
+      #boot-splash .wb-recover h1 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      #boot-splash .wb-recover p {
+        margin: 0.75rem 0 1.25rem;
+        font-size: 13px;
+        color: #475569;
+      }
+      #boot-splash .wb-recover button {
+        padding: 0.55rem 1.1rem;
+        border: 0;
+        border-radius: 10px;
+        background: #2563eb;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #boot-splash .wb-foot {
+        font-size: 11px;
+        color: #94a3b8;
+      }
+      @keyframes wb-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes wb-bar {
+        from {
+          width: 0;
+        }
+        to {
+          width: 82%;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        #boot-splash {
+          background: #0b1120;
+          color: #cbd5e1;
+        }
+        #boot-splash .wb-spin {
+          border-color: #334155;
+          border-top-color: #60a5fa;
+        }
+        #boot-splash .wb-bar {
+          background: #60a5fa;
+        }
+        #boot-splash .wb-hint,
+        #boot-splash .wb-foot {
+          color: #64748b;
+        }
+        #boot-splash .wb-recover {
+          background: #111a2c;
+          border-color: #24314b;
+          box-shadow: none;
+        }
+        #boot-splash .wb-recover h1 {
+          color: #f1f5f9;
+        }
+        #boot-splash .wb-recover p {
+          color: #94a3b8;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot-splash *,
+        #boot-splash *::before {
+          animation: none !important;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <div id="boot-splash" role="status">
+      <span class="wb-bar"></span>
+      <span class="wb-logo">W</span>
+      <span class="wb-spin"></span>
+      <span class="wb-hint">Đang tải WEBCHECK AI…</span>
+    </div>
+    <noscript>
+      <p style="font: 14px system-ui; text-align: center; padding: 16px">
+        WEBCHECK AI cần JavaScript để chạy. Hãy bật JavaScript trong trình duyệt rồi tải lại trang.
+      </p>
+    </noscript>
+    <script>
+      // Bộ tự phục hồi trang trắng (chay ES5, không phụ thuộc bundle):
+      // 1) lỗi tải module/asset hoặc promise lỗi trước khi app mount,
+      // 2) sau 15s #root vẫn trống (mạng quá chậm) — hiển thị thẻ "Tải lại"
+      //    thay vì màn trắng không lời giải thích.
+      (function () {
+        'use strict';
+        var settled = false;
+        var splash = document.getElementById('boot-splash');
+        function recover(kind) {
+          if (settled || !splash) return;
+          settled = true;
+          splash.removeAttribute('aria-hidden');
+          splash.setAttribute('role', 'alert');
+          var msg =
+            kind === 'slow'
+              ? 'Mạng đang chậm — bạn có thể chờ thêm, hoặc tải lại để thử một lần nữa.'
+              : 'Ứng dụng không khởi động được (thường do cache trình duyệt còn bản cũ). Dữ liệu phân tích và lịch sử vẫn được giữ trên máy bạn.';
+          splash.innerHTML =
+            '<div class="wb-recover">' +
+            '<h1>' +
+            (kind === 'slow' ? 'Tải trang chậm hơn bình thường' : 'Trang không mở được') +
+            '</h1>' +
+            '<p>' +
+            msg +
+            '</p>' +
+            '<button type="button" id="wb-reload">Tải lại trang</button>' +
+            '<div class="wb-foot">WEBCHECK AI · dữ liệu cục bộ trên trình duyệt</div>' +
+            '</div>';
+          var btn = document.getElementById('wb-reload');
+          if (btn) btn.onclick = function () {
+            window.location.reload();
+          };
+        }
+        window.__wbDone = function () {
+          settled = true;
+          var s = document.getElementById('boot-splash');
+          if (s && s.parentNode) s.parentNode.removeChild(s);
+        };
+        window.addEventListener(
+          'error',
+          function () {
+            if (!settled) recover('error');
+          },
+          true,
+        );
+        window.addEventListener('unhandledrejection', function () {
+          if (!settled) recover('error');
+        });
+        window.setTimeout(function () {
+          if (!settled) recover('slow');
+        }, 15000);
+      })();
+    </script>
+    <script type="module" crossorigin src="/src/main.jsx"></script>
   </body>
 </html>
