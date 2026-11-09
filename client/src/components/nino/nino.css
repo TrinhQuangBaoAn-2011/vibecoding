@@ -1,0 +1,100 @@
+/* Nino mascot — mọi chuyển động chỉ dùng transform/opacity (không kích hoạt
+ * layout). Vòng lặp nhịp thở/bước chân/vẫy tay nằm ở đây; reduced-motion đã bị
+ * chặn một lần ở media query cuối file (kể cả khi global media trong index.css
+ * không chạy trước file này). */
+
+/* ── Thân: nhịp thở (idle/looking/thinking/greeting/reacting) ── */
+.nino-idle .nino-body-group,
+.nino-looking .nino-body-group,
+.nino-thinking .nino-body-group,
+.nino-reacting .nino-body-group,
+.nino-greeting .nino-body-group {
+  transform-box: fill-box;
+  transform-origin: 50% 94%;
+  animation: nino-breathe 3.8s ease-in-out infinite;
+}
+@keyframes nino-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.016, 0.984); }
+}
+
+/* ── Thân: nhún khi đi / nảy khi vui ── */
+.nino-walking .nino-body-group {
+  transform-box: fill-box;
+  transform-origin: 50% 94%;
+  animation: nino-hop 0.42s ease-in-out infinite;
+}
+@keyframes nino-hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
+}
+
+.nino-happy .nino-body-group {
+  transform-box: fill-box;
+  transform-origin: 50% 94%;
+  animation: nino-bounce 0.66s ease-in-out infinite;
+}
+@keyframes nino-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-3px) scale(1.02, 0.98); }
+  60% { transform: translateY(0) scale(0.99, 1.012); }
+}
+
+/* ── Chớp mắt (chỉ mắt mở) ── */
+.nino-blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nino-blink 6.4s ease-in-out infinite;
+}
+@keyframes nino-blink {
+  0%, 92.5%, 100% { transform: scaleY(1); }
+  95.5% { transform: scaleY(0.1); }
+}
+
+/* ── Vẫy tay chào ── */
+.nino-arm-wave {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nino-wave 1.05s ease-in-out infinite;
+}
+@keyframes nino-wave {
+  0%, 100% { transform: rotate(-12deg); }
+  50% { transform: rotate(14deg); }
+}
+
+/* ── Bước chân (đi chậm rãi, hai chân lệch pha nửa chu kỳ) ── */
+.nino-foot-l {
+  transform-box: fill-box;
+  animation: nino-step 0.42s ease-in-out infinite;
+}
+.nino-foot-r {
+  transform-box: fill-box;
+  animation: nino-step 0.42s ease-in-out infinite 0.21s;
+}
+@keyframes nino-step {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* ── Anten "đang xử lý" / phản ứng ── */
+.nino-antenna-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nino-antenna 1.5s ease-in-out infinite;
+}
+@keyframes nino-antenna {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* ── Reduced motion: dừng toàn bộ vòng lặp của Nino ── */
+@media (prefers-reduced-motion: reduce) {
+  .nino-body-group,
+  .nino-blink,
+  .nino-arm-wave,
+  .nino-foot-l,
+  .nino-foot-r,
+  .nino-antenna-pulse {
+    animation: none !important;
+  }
+}

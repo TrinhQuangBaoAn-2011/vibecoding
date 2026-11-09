@@ -17,6 +17,7 @@ import {
 import { NavLink, Link, Outlet, useLocation } from 'react-router-dom';
 import { useHealth } from '../context/HealthContext.jsx';
 import { useHistory } from '../context/HistoryContext.jsx';
+import { Nino, NinoProvider, useNino } from './nino/index.js';
 
 /* Sidebar theo thiết kế WEBCHECK AI: khối logo, nút "Phân tích URL mới",
  * nhóm "KHÔNG GIAN LÀM VIỆC" và thẻ trạng thái backend cuối sidebar. */
@@ -51,11 +52,22 @@ function navLinkClass(isActive) {
 }
 
 export function Layout() {
+  return (
+    <NinoProvider>
+      <Shell />
+    </NinoProvider>
+  );
+}
+
+/* Shell: toàn bộ khung app như trước. Nino được mount trong provider để mọi
+ * trang con (qua Outlet) có thể gọi useNino().setMood() đồng bộ trạng thái. */
+function Shell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState('light');
   const { pathname } = useLocation();
   const { records } = useHistory();
   const { health, status: healthStatus, refresh: refreshHealth, error: healthError } = useHealth();
+  const { setMood } = useNino();
 
   useEffect(() => {
     const saved = localStorage.getItem('theme');
@@ -64,6 +76,11 @@ export function Layout() {
     setTheme(initial);
     document.documentElement.classList.toggle('dark', initial === 'dark');
   }, []);
+
+  // Chào đón người dùng mỗi khi đổi trang — Nino vẫy tay, tự về idle sau ~4s.
+  useEffect(() => {
+    setMood('greeting');
+  }, [pathname, setMood]);
 
   const toggleTheme = () => {
     const next = theme === 'light' ? 'dark' : 'light';
@@ -236,7 +253,7 @@ export function Layout() {
         )}
 
         {/* Main content */}
-        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="min-w-0 flex-1 p-4 pb-36 sm:p-6 sm:pb-40 lg:p-8 lg:pb-36">
           <Outlet />
         </main>
       </div>
@@ -245,6 +262,9 @@ export function Layout() {
       <footer className="border-t border-ink-200/80 bg-white/70 py-4 text-center text-xs text-ink-400 dark:border-ink-800 dark:bg-ink-900/70">
         WEBCHECK AI · Phân tích website · Dữ liệu cục bộ trên trình duyệt · Bảo vệ SSRF
       </footer>
+
+      {/* Nino mascot — thuần UI, không đụng chức năng; tắt bằng cài đặt Nino */}
+      <Nino />
     </div>
   );
 }
