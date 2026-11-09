@@ -121,7 +121,7 @@ export function Dashboard() {
 
         <div className="relative grid items-start gap-8 lg:grid-cols-[1.25fr_1fr] lg:gap-10">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-border bg-brand-50/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-brand-600">
+            <p className="inline-flex items-center gap-2 rounded-full border border-border bg-brand-50/80 px-3 py-1 text-[11px] font-semibold text-brand-600">
               <Zap className="h-3.5 w-3.5" />
               Website intelligence cho doanh nghiệp Việt
             </p>

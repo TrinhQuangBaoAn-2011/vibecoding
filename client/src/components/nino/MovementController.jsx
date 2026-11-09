@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 
-/* Vùng đi bộ của Nino: một dải hẹp ngay trên footer — không bao giờ trồi lên
- * khu nội dung chính. Thỉnh thoảng (9–17 giây) Nino đi ngang đến một điểm
- * ngẫu nhiên trong [8%..78%] bề ngang (cách mép phải để tránh khu toast),
- * quay về idle khi tới nơi. Mobile hoặc reduced-motion: đứng yên tại
- * "chân đế" mặc định (72%). Trả về state {x, facing} cho renderer. */
+/* Vùng đi bộ của Nino: một dải hẹp ở GÓC PHẢI trên footer — tránh trục giữa
+ * nơi nội dung chính tập trung. Thỉnh thoảng (9–17 giây) Nino đi ngang trong
+ * [68%..86%] bề ngang, quay về idle khi tới nơi. Mobile hoặc reduced-motion:
+ * đứng yên tại "chân đế" mặc định (84%, góc phải dưới). Trả về state {x, facing}. */
 
-const LANE_MIN = 8;
-const LANE_MAX = 78;
-const HOME = 72;
+const LANE_MIN = 68;
+const LANE_MAX = 86;
+const HOME = 84;
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);

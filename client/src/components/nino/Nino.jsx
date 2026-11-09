@@ -20,6 +20,25 @@ function useReducedMotion() {
   return reduced;
 }
 
+/* Mascot chỉ "công khai" khi trang ở đỉnh (khu hero — khoảng trống đáy phải).
+ * Người dùng cuộn xuống để đọc/làm việc → Nino trượt khỏi màn hình, không bao
+ * giờ đè nội dung_phá đang đọc. Chỉ transform, transition 200ms, listener
+ * passive và được gỡ khi unmount. */
+const SCROLL_HIDE_THRESHOLD = 32;
+
+function useScrollHide() {
+  const [hidden, setHidden] = useState(() => window.scrollY > SCROLL_HIDE_THRESHOLD);
+
+  useEffect(() => {
+    const onScroll = () => setHidden(window.scrollY > SCROLL_HIDE_THRESHOLD);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return hidden;
+}
+
 /* Nino hoàn chỉnh — mỗi tầng một việc:
  *  - useMovement: vị trí + dải đi bộ (desktop, tắt khi reduced-motion);
  *  - useEyeTracking: tròng mắt theo con trỏ (desktop + pointer fine);
@@ -27,6 +46,7 @@ function useReducedMotion() {
 export function Nino() {
   const { enabled, mood, setMood } = useNino();
   const reducedMotion = useReducedMotion();
+  const hidden = useScrollHide();
   const [canWalk, setCanWalk] = useState(
     () => window.matchMedia('(min-width: 768px)').matches,
   );
@@ -48,7 +68,10 @@ export function Nino() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 select-none">
-      <div className="absolute bottom-12 h-24 w-full">
+      <div
+        className="absolute bottom-12 h-24 w-full"
+        style={{ transform: hidden ? 'translateY(115%)' : 'translateY(0)', transition: 'transform 220ms ease' }}
+      >
         <div
           className="absolute bottom-0 w-[64px] md:w-[92px]"
           style={{ left: `${x}%`, transform: 'translateX(-50%)' }}

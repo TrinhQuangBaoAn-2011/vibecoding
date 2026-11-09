@@ -11,6 +11,8 @@
 
   html {
     scroll-behavior: smooth;
+    /* Sticky header 64px — giữ focus luôn hiển thị khi Tab/anchor (WCAG 2.2 2.4.11) */
+    scroll-padding-top: 5rem;
   }
 
   body {
@@ -136,6 +138,124 @@
 
   .page-enter {
     @apply animate-fade-up;
+  }
+}
+
+/* ── Dark mode — phủ "đều" toàn app qua token-based overrides ──
+ * Toggle (logic có sẵn, không đổi) chỉ thêm class 'dark' lên <html>; khối này
+ * đảo palette: nền #020617, card #1e293b, text sáng theo thang ink, giữ nguyên
+ * brand/status/badges pastel. Viết sau @tailwind nên thắng các utility cùng
+ * specificity (cascade order), không phải sửa từng file JSX.
+ * Riêng bảng semantic (bg-background/card…) bám đúng token đã định nghĩa. */
+@layer utilities {
+  /* Nền & card */
+  .dark .bg-white {
+    background-color: #1e293b;
+  }
+  .dark .bg-ink-50,
+  .dark .bg-ink-50\/60,
+  .dark .bg-ink-50\/70,
+  .dark .bg-ink-50\/80 {
+    background-color: #0f172a;
+  }
+  .dark .bg-ink-100,
+  .dark .bg-ink-100\/50 {
+    background-color: #16202f;
+  }
+  .dark .bg-background {
+    background-color: #020617;
+  }
+  .dark .bg-card,
+  .dark .bg-card\/70,
+  .dark .bg-card\/80 {
+    background-color: #1e293b;
+  }
+
+  /* Viền */
+  .dark .border-ink-100,
+  .dark .border-ink-200,
+  .dark .border-ink-200\/80,
+  .dark .border-border,
+  .dark .border-border\/60 {
+    border-color: #334155;
+  }
+  .dark .border-brand-100,
+  .dark .border-brand-200 {
+    border-color: rgba(30, 58, 138, 0.8);
+  }
+  .dark .ring-ink-100,
+  .dark .ring-ink-200,
+  .dark .ring-ink-200\/80,
+  .dark .ring-ink-300 {
+    --tw-ring-color: #334155;
+  }
+
+  /* Chữ theo thang ink */
+  .dark .text-ink-900,
+  .dark .text-ink-800,
+  .dark .text-ink-700 {
+    color: #f1f5f9;
+  }
+  .dark .text-ink-600 {
+    color: #cbd5e1;
+  }
+  .dark .text-ink-500 {
+    color: #cbd5e1;
+  }
+  .dark .text-ink-400 {
+    color: #94a3b8;
+  }
+  .dark .text-foreground {
+    color: #f1f5f9;
+  }
+  .dark .text-card-foreground {
+    color: #f1f5f9;
+  }
+  .dark .text-muted-foreground {
+    color: #94a3b8;
+  }
+
+  /* Brand surfaces (chips/pills nền brand-50) — tint đậm + chữ brand sáng */
+  .dark .bg-brand-50,
+  .dark .bg-brand-50\/60,
+  .dark .bg-brand-50\/70,
+  .dark .bg-brand-50\/80 {
+    background-color: rgba(30, 58, 138, 0.5);
+  }
+  .dark .text-brand-600,
+  .dark .text-brand-700 {
+    color: #93c5fd;
+  }
+  .dark .text-brand-800 {
+    color: #bfdbfe;
+  }
+  .dark .bg-brand-600 {
+    background-color: #2563eb;
+  }
+
+  /* Soft status surfaces giữ độ tương phản trên nền tối (chữ đậm gốc ok) */
+  .dark .text-emerald-800,
+  .dark .text-emerald-700 {
+    color: #a7f3d0;
+  }
+  .dark .text-amber-800,
+  .dark .text-amber-700 {
+    color: #fcd34d;
+  }
+  .dark .text-rose-800,
+  .dark .text-rose-700 {
+    color: #fecdd3;
+  }
+  .dark .text-brand-950 {
+    color: #eff6ff;
+  }
+}
+
+/* Nâng siêu nhỏ: label phụ (#94a3b8 trên trắng chỉ ~2.9:1) — tuyên bố sau
+ * @tailwind nên thắng utility; dark scope phía trên ghi đè riêng cho dark. */
+@layer utilities {
+  .text-ink-400 {
+    color: #64748b;
   }
 }
 
