@@ -76,7 +76,7 @@ export function AnalysisReport({
       <section className="space-y-5">
         {/* Report Header */}
         <section className="card overflow-hidden">
-          <div className="relative overflow-hidden bg-gradient-to-r from-brand-50 via-brand-100 to-cyan-50 px-5 py-4 sm:px-6">
+          <div className="relative overflow-hidden bg-brand-50/80 px-5 py-4 sm:px-6">
             <div className="pointer-events-none absolute -right-12 -top-14 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
             <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">

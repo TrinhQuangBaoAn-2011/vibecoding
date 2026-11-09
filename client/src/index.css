@@ -84,7 +84,7 @@
   }
 
   .eyebrow {
-    @apply text-xs font-bold uppercase tracking-[0.16em] text-brand-600;
+    @apply text-xs font-semibold tracking-[0.02em] text-brand-600;
   }
 
   .gradient-text {

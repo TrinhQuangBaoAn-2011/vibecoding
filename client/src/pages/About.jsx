@@ -119,7 +119,7 @@ export function About() {
 
           <div className="card p-5">
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-cyan-400 text-white shadow-glow">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-600 text-white shadow-soft">
                 <ShieldCheck className="h-5 w-5" />
               </span>
               <div>
@@ -389,7 +389,7 @@ export function About() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-ink-900 via-ink-900 to-brand-900 px-6 py-8 text-center text-white sm:px-10">
+      <section className="relative overflow-hidden rounded-3xl bg-ink-950 px-6 py-8 text-center text-white sm:px-10">
         <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-brand-500/30 blur-3xl" />
         <div className="relative">
           <h2 className="text-xl font-bold text-white sm:text-2xl">Sẵn sàng kiểm tra website của bạn?</h2>

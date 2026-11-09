@@ -140,7 +140,7 @@ export function ProgressSteps({
           <div
             className={`h-full rounded-full transition-[width] duration-700 ${
               status === 'error'
-                ? 'bg-gradient-to-r from-rose-500 to-orange-400'
+                ? 'bg-rose-500'
                 : 'bg-gradient-to-r from-brand-600 to-cyan-400'
             }`}
             style={{ width: `${percent}%` }}

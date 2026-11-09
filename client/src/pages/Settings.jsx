@@ -18,6 +18,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog.jsx';
 import { useHistory } from '../context/HistoryContext.jsx';
 import { useHealth } from '../context/HealthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useNino } from '../components/nino/index.js';
 import {
   downloadHistoryJson,
   loadSettings,
@@ -71,6 +72,7 @@ export function Settings() {
   const { records, clearAll, pruneTo, getInfo } = useHistory();
   const { status, health, aiConfigured, refresh } = useHealth();
   const toast = useToast();
+  const { enabled: ninoEnabled, toggleEnabled, setMood } = useNino();
   const [settings, setSettings] = useState(loadSettings);
   const [clearOpen, setClearOpen] = useState(false);
 
@@ -89,6 +91,11 @@ export function Settings() {
 
   const handleAutoAi = () => {
     persistSettings({ ...settings, autoAi: !settings.autoAi });
+  };
+
+  const handleNinoToggle = () => {
+    toggleEnabled();
+    setMood('reacting', { trigger: 'setting' });
   };
 
   const handleMaxHistory = (event) => {
@@ -274,6 +281,31 @@ export function Settings() {
             Lịch sử không được gửi lên máy chủ. Khi xóa dữ liệu trình duyệt hoặc dùng chế độ riêng tư,
             lịch sử có thể mất.
           </p>
+        </section>
+
+        <section className="card p-5 sm:p-6">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+              <Bot className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-base font-bold text-ink-900">Trợ lý Nino</h2>
+              <p className="mt-0.5 text-xs text-ink-500">Nhân vật vui nhộn ở đáy màn hình.</p>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-4">
+            <Toggle
+              checked={ninoEnabled}
+              onChange={handleNinoToggle}
+              label="Hiện Nino"
+              description="Nino đi dạo ở dải đáy màn hình, mắt nhìn theo con trỏ và biểu cảm theo kết quả phân tích. Tắt Nino không ảnh hưởng chức năng nào."
+            />
+            <p className="rounded-lg bg-ink-50 px-3 py-2 text-[11px] leading-relaxed text-ink-500">
+              Trên điện thoại và chế độ giảm chuyển động: Nino đứng tĩnh, không đi dạo và không theo
+              mắt để tiết kiệm pin.
+            </p>
+          </div>
         </section>
       </div>
 

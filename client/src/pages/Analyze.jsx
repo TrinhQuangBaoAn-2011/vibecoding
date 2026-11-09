@@ -19,6 +19,7 @@ import { AnalysisReport } from '../components/AnalysisReport.jsx';
 import { useAnalyze } from '../hooks/useAnalyze.js';
 import { useHistory } from '../context/HistoryContext.jsx';
 import { buildComparison } from '../lib/comparison.js';
+import { useNino } from '../components/nino/index.js';
 
 const DELIVERABLES = [
   { icon: TrendingUp, title: 'Điểm tổng kết trên thang 100', description: 'Chuẩn hóa sau khi loại tiêu chí Không xác định hoặc Không áp dụng.' },
@@ -48,6 +49,23 @@ export function Analyze() {
 
   const [lastUrl, setLastUrl] = useState(initialUrl);
   const autoRunRef = useRef(false);
+  const { setMood } = useNino();
+
+  // Nino phản ánh đúng trạng thái bộ máy: chấm điểm/mời AI → thinking,
+  // xong → happy, lỗi → concerned, xong mood tạm tự về idle (provider lo).
+  // Chỉ ĐỌC state của useAnalyze — không đụng state machine.
+  const activeProgressKey = useMemo(
+    () => progress.find((step) => step.status === 'active')?.key || 'run',
+    [progress],
+  );
+
+  useEffect(() => {
+    if (status === 'analyzing') setMood('thinking', { stage: activeProgressKey });
+    else if (status === 'ai-pending') setMood('thinking', { stage: 'ai' });
+    else if (status === 'success') setMood('happy');
+    else if (status === 'error') setMood('concerned');
+    else setMood('idle');
+  }, [status, activeProgressKey, setMood]);
 
   useEffect(() => {
     if (autoRunRef.current || !initialUrl) return;
