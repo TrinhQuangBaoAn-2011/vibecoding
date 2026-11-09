@@ -2,15 +2,11 @@ import { useState } from 'react';
 import {
   Bot,
   CheckCircle2,
-  Database,
   Download,
   HardDrive,
-  KeyRound,
   RefreshCw,
   Server,
   Settings as SettingsIcon,
-  ShieldCheck,
-  Sparkles,
   Trash2,
   TriangleAlert,
 } from 'lucide-react';
@@ -28,17 +24,6 @@ import {
 import { formatBytes, formatDuration, formatNumber } from '../lib/format.js';
 
 const HISTORY_OPTIONS = [20, 50, 100];
-
-const ENV_EXAMPLE = `# Tạo file .env tại thư mục gốc dự án
-AI_API_KEY=your_api_key_here
-AI_BASE_URL=https://api.openai.com/v1
-AI_MODEL=gpt-4o-mini
-AI_PROVIDER=openai
-
-# Tùy chọn
-AI_TIMEOUT_MS=30000
-AI_TEMPERATURE=0.25
-AI_JSON_MODE=true`;
 
 function Toggle({ checked, onChange, label, description }) {
   return (
@@ -172,7 +157,7 @@ export function Settings() {
         <p className="eyebrow">Tùy chỉnh</p>
         <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">Cài đặt</h1>
         <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-500">
-          Điều chỉnh cách WEBCHECK AI hoạt động trên trình duyệt này và kiểm tra cấu hình backend.
+          Điều chỉnh cách WEBCHECK AI hoạt động trên trình duyệt này.
         </p>
       </header>
 
@@ -309,97 +294,45 @@ export function Settings() {
         </section>
       </div>
 
-      <section className="card overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-ink-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <section className="card p-5 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+            <span
+              className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                aiConfigured ? 'bg-emerald-50 text-emerald-600' : 'bg-ink-100 text-ink-500'
+              }`}
+            >
               <Bot className="h-5 w-5" />
             </span>
             <div>
-              <h2 className="text-base font-bold text-ink-900">Cấu hình AI</h2>
-              <p className="mt-0.5 text-xs text-ink-500">
-                API key chỉ lưu ở backend, không bao giờ gửi xuống trình duyệt.
-              </p>
+              <h2 className="text-base font-bold text-ink-900">Trạng thái AI</h2>
+              <p className="mt-0.5 text-xs text-ink-500">Nguồn tạo nhận xét cho kết quả phân tích.</p>
             </div>
           </div>
-          <button type="button" onClick={refresh} className="btn-secondary btn-sm">
+          <button type="button" onClick={refresh} className="btn-secondary btn-sm shrink-0">
             <RefreshCw className={`h-4 w-4 ${status === 'refreshing' ? 'animate-spin' : ''}`} />
-            Kiểm tra backend
+            Kiểm tra lại
           </button>
         </div>
 
-        <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1fr_1.15fr]">
-          <div className="space-y-4">
-            <div
-              className={`rounded-xl border p-4 ${
-                aiConfigured
-                  ? 'border-emerald-200 bg-emerald-50/60'
-                  : 'border-amber-200 bg-amber-50/70'
-              }`}
-            >
-              <div className="flex items-start gap-2.5">
-                {aiConfigured ? (
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-                ) : (
-                  <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                )}
-                <div>
-                  <p className={`text-sm font-bold ${aiConfigured ? 'text-emerald-800' : 'text-amber-800'}`}>
-                    {aiConfigured ? 'AI trực tiếp đã sẵn sàng' : 'Chưa cấu hình AI_API_KEY'}
-                  </p>
-                  <p className={`mt-1 text-xs leading-relaxed ${aiConfigured ? 'text-emerald-700' : 'text-amber-700'}`}>
-                    {aiConfigured
-                      ? `Provider: ${health?.ai?.provider || '—'} · Model: ${health?.ai?.model || '—'}. Nhận xét sẽ do mô hình tạo từ dữ liệu thực tế.`
-                      : 'Khi chưa có khóa, backend trả về nhận xét từ bộ quy tắc dựa trên dữ liệu thực tế. Nội dung được ghi rõ là dự phòng, không giả lập AI.'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-ink-200 bg-white p-4">
-              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] text-ink-500">
-                <KeyRound className="h-3.5 w-3.5" />
-                Ba bước thiết lập
-              </p>
-              <ol className="mt-3 space-y-2.5 text-xs leading-relaxed text-ink-600">
-                <li className="flex gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink-900 text-[10px] font-bold text-white">1</span>
-                  Tạo file <code className="rounded bg-ink-100 px-1 py-0.5 font-mono text-[11px]">.env</code> tại thư mục gốc dự án.
-                </li>
-                <li className="flex gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink-900 text-[10px] font-bold text-white">2</span>
-                  Điền biến môi trường theo mẫu bên cạnh (OpenAI hoặc nhà cung cấp tương thích).
-                </li>
-                <li className="flex gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink-900 text-[10px] font-bold text-white">3</span>
-                  Khởi động lại backend rồi bấm “Kiểm tra backend” để xác nhận.
-                </li>
-              </ol>
-            </div>
-
-            <div className="flex items-start gap-2 rounded-xl border border-brand-100 bg-brand-50/60 px-3.5 py-3">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
-              <p className="text-[11px] leading-relaxed text-brand-800">
-                Không đưa khóa vào biến <code className="font-mono">VITE_*</code>, không commit file{' '}
-                <code className="font-mono">.env</code>. Backend chỉ trả về nhận xét đã kiểm tra, không trả
-                về khóa.
-              </p>
-            </div>
-          </div>
-
+        <div
+          className={`mt-5 flex items-start gap-2.5 rounded-xl border p-4 ${
+            aiConfigured ? 'border-emerald-200 bg-emerald-50/60' : 'border-ink-200 bg-ink-50/60'
+          }`}
+        >
+          {aiConfigured ? (
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+          ) : (
+            <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-ink-500" />
+          )}
           <div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-[0.1em] text-ink-400">
-                Mẫu file .env
-              </p>
-              <span className="badge bg-ink-100 text-ink-600">Backend only</span>
-            </div>
-            <pre className="scrollbar-thin mt-2 overflow-x-auto rounded-xl border border-ink-800 bg-ink-950 p-4 text-[11px] leading-relaxed text-ink-100">
-              <code>{ENV_EXAMPLE}</code>
-            </pre>
-            <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
-              Hỗ trợ mọi endpoint OpenAI-compatible như OpenAI, Azure OpenAI gateway, Groq, Together,
-              OpenRouter hoặc mô hình tự triển khai. Xem README để biết chi tiết.
+            <p className={`text-sm font-bold ${aiConfigured ? 'text-emerald-800' : 'text-ink-800'}`}>
+              {aiConfigured ? 'Nhận xét do AI trực tiếp tạo' : 'Đang dùng bộ quy tắc dự phòng'}
+            </p>
+            <p className={`mt-1 text-xs leading-relaxed ${aiConfigured ? 'text-emerald-700' : 'text-ink-500'}`}>
+              {aiConfigured
+                ? 'Nhận xét được tạo từ dữ liệu kiểm tra thực tế và luôn được ghi rõ nguồn gốc.'
+                : 'Nhận xét vẫn được tạo từ chính kết quả chấm điểm thực tế và được ghi rõ là dự phòng, không trình bày như AI trực tiếp.'}
             </p>
           </div>
         </div>
@@ -411,10 +344,8 @@ export function Settings() {
             <Server className="h-5 w-5" />
           </span>
           <div>
-            <h2 className="text-base font-bold text-ink-900">Thông tin backend</h2>
-            <p className="mt-0.5 text-xs text-ink-500">
-              {health?.service || 'WEBCHECK AI API'} · phiên bản {health?.version || '—'}
-            </p>
+            <h2 className="text-base font-bold text-ink-900">Giới hạn hệ thống</h2>
+            <p className="mt-0.5 text-xs text-ink-500">Áp dụng cho các lần phân tích qua WEBCHECK AI.</p>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -424,20 +355,6 @@ export function Settings() {
               <p className="mt-1 text-sm font-bold text-ink-800 tabular">{stat.value}</p>
             </div>
           ))}
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-ink-500">
-          <span className="inline-flex items-center gap-1">
-            <Database className="h-3 w-3" />
-            Cache phân tích: {health?.cache?.size ?? 0} mục
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Sparkles className="h-3 w-3" />
-            Chế độ AI: {health?.ai?.mode || '—'}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <ShieldCheck className="h-3 w-3" />
-            Chỉ cho phép cổng 80/443
-          </span>
         </div>
       </section>
 

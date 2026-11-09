@@ -315,10 +315,9 @@ export function About() {
           </div>
           <div className="mt-4 space-y-3 text-sm leading-relaxed text-ink-600">
             <p>
-              Khi backend có <code className="rounded bg-ink-100 px-1 py-0.5 font-mono text-xs">AI_API_KEY</code>,
-              kết quả của toàn bộ 60 tiêu chí (kèm trạng thái, trọng số) được gửi tới mô hình
-              OpenAI-compatible. Prompt yêu cầu chỉ dùng dữ liệu thật, ưu tiên chỉ ra tiêu chí trọng số
-              cao chưa đạt và không hứa hẹn thứ hạng.
+              Khi được kết nối với mô hình AI, kết quả của toàn bộ 60 tiêu chí (kèm trạng thái,
+              mức ưu tiên) được gửi để tạo nhận xét. Yêu cầu đặt ra cho mô hình: chỉ dùng dữ liệu
+              thật, ưu tiên chỉ ra tiêu chí trọng số cao chưa đạt và không hứa hẹn thứ hạng.
             </p>
             <p>
               Khi chưa cấu hình hoặc nhà cung cấp AI gặp lỗi, backend tạo nhận xét bằng bộ quy tắc dựa
