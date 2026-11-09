@@ -20,9 +20,9 @@ function useReducedMotion() {
   return reduced;
 }
 
-/* Mascot chỉ "công khai" khi trang ở đỉnh (khu hero — khoảng trống đáy phải).
+/* Mascot chỉ "công khai" khi trang ở đỉnh (khu hero — khoảng trống đáy trái).
  * Người dùng cuộn xuống để đọc/làm việc → Nino trượt khỏi màn hình, không bao
- * giờ đè nội dung_phá đang đọc. Chỉ transform, transition 200ms, listener
+ * giờ đè nội dung đang đọc. Chỉ transform, transition 200ms, listener
  * passive và được gỡ khi unmount. */
 const SCROLL_HIDE_THRESHOLD = 32;
 
@@ -53,6 +53,10 @@ export function Nino() {
   const pupil = useEyeTracking({ enabled, reducedMotion });
   const { x, facing } = useMovement({ enabled, canWalk, reducedMotion, setMood });
 
+  /* Góc nghiêng nhẹ (±6°) theo hướng đi — Nino "chồm" về phía trước trông như
+   * đang bước thật. Idle/reduced-motion/trục đứng: đặt lại 0° (quay về nhìn thẳng). */
+  const tilt = !reducedMotion && mood === 'walking' ? facing * 6 : 0;
+
   useEffect(() => {
     const query = window.matchMedia('(min-width: 768px)');
     const onChange = (event) => setCanWalk(event.matches);
@@ -74,7 +78,7 @@ export function Nino() {
       >
         <div
           className="absolute bottom-0 w-[64px] md:w-[92px]"
-          style={{ left: `${x}%`, transform: 'translateX(-50%)' }}
+          style={{ left: `${x}%`, transform: 'translateX(-50%)', transition: 'left 240ms ease-in-out' }}
         >
           <button
             type="button"
@@ -82,7 +86,12 @@ export function Nino() {
             className="pointer-events-auto -m-2 cursor-pointer rounded-full p-2 outline-none transition-transform duration-150 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
             aria-label="Nino — trợ lý ảo của WEBCHECK AI (bấm để chào)"
           >
-            <CharacterRenderer mood={mood} pupil={pupil} facing={facing} />
+            <span
+              className="block"
+              style={{ transform: `rotate(${tilt}deg)`, transition: 'transform 220ms ease' }}
+            >
+              <CharacterRenderer mood={mood} pupil={pupil} facing={facing} />
+            </span>
           </button>
         </div>
       </div>
