@@ -22,7 +22,7 @@ import { formatDateTime } from '../lib/format.js';
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-ink-200 bg-white px-3 py-2 shadow-lift">
+    <div className="rounded-md border border-ink-200 bg-white px-3 py-2 shadow-lift">
       <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink-400">{label}</p>
       <p className="mt-0.5 text-sm font-bold text-ink-900 tabular">{payload[0].value}/100 điểm</p>
     </div>
@@ -147,14 +147,14 @@ export function ComparisonCard({ comparison, className = '' }) {
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="flex h-56 items-center justify-center rounded-xl border border-dashed border-ink-200 bg-ink-50/50 text-sm text-ink-500">
+            <div className="flex h-56 items-center justify-center rounded-md border border-dashed border-ink-200 bg-ink-50/50 text-sm text-ink-500">
               Cần ít nhất 2 lần kiểm tra để vẽ biểu đồ.
             </div>
           )}
         </div>
 
         <div className="space-y-3">
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3.5">
+          <div className="rounded-md border border-emerald-100 bg-emerald-50/50 p-3.5">
             <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.08em] text-emerald-700">
               <ArrowUpRight className="h-3.5 w-3.5" />
               Tiêu chí được cải thiện ({improved.length})
@@ -174,7 +174,7 @@ export function ComparisonCard({ comparison, className = '' }) {
             )}
           </div>
 
-          <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-3.5">
+          <div className="rounded-md border border-rose-100 bg-rose-50/50 p-3.5">
             <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.08em] text-rose-700">
               <ArrowDownRight className="h-3.5 w-3.5" />
               Tiêu chí bị giảm ({declined.length})

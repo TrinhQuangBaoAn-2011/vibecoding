@@ -97,7 +97,7 @@ export function AiConsultant({
 
         {/* Review Content */}
         {eReview && eReview.summary ? (
-          <div className="mt-3 rounded-xl bg-neutral-50/60 p-3 text-sm text-ink-700">
+          <div className="mt-3 rounded-md bg-neutral-50/60 p-3 text-sm text-ink-700">
             <p className="font-medium">{eReview.summary}</p>
           </div>
         ) : (

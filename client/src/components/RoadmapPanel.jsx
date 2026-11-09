@@ -113,17 +113,17 @@ function RoadmapItem({ criterion, open, onToggle, tier }) {
       {open && (
         <div className="border-t border-ink-100 p-4 sm:p-5">
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className={`rounded-xl p-4 ${tier.boxes.problem}`}>
+            <div className={`rounded-md p-4 ${tier.boxes.problem}`}>
               <p className={`text-xs font-bold ${tier.boxes.label}`}>Vấn đề</p>
               <p className="mt-1.5 text-sm leading-relaxed">{criterion.message || criterion.value}</p>
             </div>
-            <div className={`rounded-xl p-4 ${tier.boxes.impact}`}>
+            <div className={`rounded-md p-4 ${tier.boxes.impact}`}>
               <p className={`text-xs font-bold ${tier.boxes.labelImpact}`}>Tác động</p>
               <p className="mt-1.5 text-sm leading-relaxed">{criterion.impact || GENERAL.impact}</p>
             </div>
           </div>
 
-          <div className={`mt-3 rounded-xl p-4 ${tier.boxes.suggestion}`}>
+          <div className={`mt-3 rounded-md p-4 ${tier.boxes.suggestion}`}>
             <p className={`text-xs font-bold ${tier.boxes.labelSuggestion}`}>Đề xuất</p>
             <p className="mt-1.5 text-sm leading-relaxed" style={{ whiteSpace: 'pre-wrap' }}>
               {criterion.recommendation || GENERAL.recommendation}

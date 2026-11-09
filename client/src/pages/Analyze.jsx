@@ -240,7 +240,7 @@ export function Analyze() {
               ))}
             </ol>
 
-            <div className="mt-5 flex items-start gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 px-3.5 py-3">
+            <div className="mt-5 flex items-start gap-2 rounded-md border border-emerald-100 bg-emerald-50/60 px-3.5 py-3">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
               <p className="text-xs leading-relaxed text-emerald-800">
                 API key AI chỉ nằm ở backend. Frontend không bao giờ nhận hoặc lưu khóa bí mật.
@@ -254,7 +254,7 @@ export function Analyze() {
               </p>
               <ul className="mt-4 space-y-3">
                 {DELIVERABLES.map((item) => (
-                  <li key={item.title} className="flex items-start gap-3 rounded-xl border border-ink-100 bg-ink-50/50 p-3">
+                  <li key={item.title} className="flex items-start gap-3 rounded-md border border-ink-100 bg-ink-50/50 p-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm">
                       <item.icon className="h-4 w-4" />
                     </span>

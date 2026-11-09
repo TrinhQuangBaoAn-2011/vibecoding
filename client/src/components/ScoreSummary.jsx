@@ -66,7 +66,7 @@ export function ScoreSummary({ analysis, comparison }) {
       </div>
 
       {priorities.length > 0 && (
-        <div className="mt-4 rounded-xl border border-ink-200 bg-gradient-to-b from-ink-50/80 to-white p-4">
+        <div className="mt-4 rounded-md border border-ink-200 bg-gradient-to-b from-ink-50/80 to-white p-4">
           <div className="flex flex-wrap items-center gap-2">
             <Scale className="h-4 w-4 text-brand-600" />
             <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-600">

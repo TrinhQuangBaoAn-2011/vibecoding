@@ -76,7 +76,7 @@ export function CriterionModal({ criterion, open, onClose }) {
           <p className="mb-1.5 text-xs font-bold uppercase tracking-[0.12em] text-ink-400">
             Giá trị ghi nhận
           </p>
-          <div className="rounded-xl border border-ink-200 bg-ink-50/70 px-4 py-3">
+          <div className="rounded-md border border-ink-200 bg-ink-50/70 px-4 py-3">
             <p className="break-words font-mono text-xs leading-relaxed text-ink-700 sm:text-sm">
               {criterion.value || 'Không tìm thấy'}
             </p>
@@ -91,7 +91,7 @@ export function CriterionModal({ criterion, open, onClose }) {
         </div>
 
         {criterion.impact && (
-          <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4">
+          <div className="rounded-md border border-sky-100 bg-sky-50/60 p-4">
             <div className="flex items-start gap-2.5">
               <Scale className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
               <div>
@@ -104,7 +104,7 @@ export function CriterionModal({ criterion, open, onClose }) {
           </div>
         )}
 
-        <div className="rounded-xl border border-brand-100 bg-brand-50/60 p-4">
+        <div className="rounded-md border border-brand-100 bg-brand-50/60 p-4">
           <div className="flex items-start gap-2.5">
             <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
             <div>
@@ -121,7 +121,7 @@ export function CriterionModal({ criterion, open, onClose }) {
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-400">
               Bằng chứng chi tiết
             </p>
-            <dl className="divide-y divide-ink-100 overflow-hidden rounded-xl border border-ink-200">
+            <dl className="divide-y divide-ink-100 overflow-hidden rounded-md border border-ink-200">
               {criterion.details.map((detail, index) => (
                 <div
                   key={`${detail.label}-${index}`}

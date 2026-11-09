@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component {
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl border border-ink-200 bg-ink-50 px-3.5 py-3">
+          <div className="mt-4 rounded-md border border-ink-200 bg-ink-50 px-3.5 py-3">
             <p className="break-words font-mono text-[11px] leading-relaxed text-ink-600">
               {this.state.error?.message || 'Unknown UI error'}
             </p>

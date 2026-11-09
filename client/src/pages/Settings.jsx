@@ -223,7 +223,7 @@ export function Settings() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-xl border border-ink-200 bg-ink-50/60 p-4">
+          <div className="mt-5 rounded-md border border-ink-200 bg-ink-50/60 p-4">
             <div className="flex items-center justify-between text-xs font-semibold text-ink-600">
               <span>Dung lượng ước tính</span>
               <span className="tabular">
@@ -316,7 +316,7 @@ export function Settings() {
         </div>
 
         <div
-          className={`mt-5 flex items-start gap-2.5 rounded-xl border p-4 ${
+          className={`mt-5 flex items-start gap-2.5 rounded-md border p-4 ${
             aiConfigured ? 'border-emerald-200 bg-emerald-50/60' : 'border-ink-200 bg-ink-50/60'
           }`}
         >
@@ -350,7 +350,7 @@ export function Settings() {
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {backendStats.map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-ink-100 bg-ink-50/60 p-3">
+            <div key={stat.label} className="rounded-md border border-ink-100 bg-ink-50/60 p-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-ink-400">{stat.label}</p>
               <p className="mt-1 text-sm font-bold text-ink-800 tabular">{stat.value}</p>
             </div>

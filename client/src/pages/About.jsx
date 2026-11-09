@@ -237,7 +237,7 @@ export function About() {
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl border border-ink-200 bg-ink-50/60 p-4">
+          <div className="mt-4 rounded-md border border-ink-200 bg-ink-50/60 p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink-400">Công thức</p>
             <p className="mt-2 font-mono text-sm font-bold text-ink-900">
               (Σ điểm đạt / Σ điểm tối đa khả dụng) × 100
@@ -293,7 +293,7 @@ export function About() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 rounded-xl bg-ink-50 px-3.5 py-3 text-[11px] leading-relaxed text-ink-500">
+          <p className="mt-4 rounded-md bg-ink-50 px-3.5 py-3 text-[11px] leading-relaxed text-ink-500">
             Nhãn "Không xác định" thay cho "Không thể kiểm tra" của bản cũ: các mục chỉ chấm được
             khi dữ liệu (HTML tĩnh, robots.txt, sitemap.xml) đủ — thiếu dữ liệu thì loại khỏi điểm,
             không bịa kết quả.
@@ -325,7 +325,7 @@ export function About() {
               dự phòng". Fallback không được trình bày như AI trực tiếp.
             </p>
           </div>
-          <div className="mt-4 rounded-xl border border-violet-100 bg-violet-50/60 px-3.5 py-3 text-xs leading-relaxed text-violet-800">
+          <div className="mt-4 rounded-md border border-violet-100 bg-violet-50/60 px-3.5 py-3 text-xs leading-relaxed text-violet-800">
             AI không tự thay đổi điểm số. Điểm luôn do bộ chấm xác định từ dữ liệu HTML.
           </div>
         </section>
