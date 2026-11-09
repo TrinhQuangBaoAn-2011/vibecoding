@@ -43,7 +43,7 @@ function breadcrumbTitle(pathname) {
 
 function navLinkClass(isActive) {
   return [
-    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
+    'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors',
     isActive
       ? 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100'
       : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900',
@@ -90,7 +90,7 @@ export function Layout() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-2">
             <Link to="/" className="flex items-center gap-2 lg:hidden" aria-label="WEBCHECK AI - Trang chủ">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lift">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-soft">
                 <Shield className="h-5 w-5" />
               </span>
               <span className="text-lg font-extrabold tracking-tight text-ink-900 dark:text-white">
@@ -110,7 +110,7 @@ export function Layout() {
             <button
               type="button"
               onClick={() => refreshHealth()}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ring-1 ring-inset transition-colors ${statusPill.pillClass}`}
+              className={`inline-flex min-h-[2.75rem] items-center gap-1.5 rounded-full px-3.5 text-xs font-bold ring-1 ring-inset transition-colors ${statusPill.pillClass}`}
               title={healthError ? `Chi tiết lỗi: ${healthError}` : 'Nhấn để làm mới trạng thái hệ thống'}
             >
               <span className={`h-2 w-2 rounded-full ${statusPill.dot}`} />
@@ -120,7 +120,7 @@ export function Layout() {
             <button
               type="button"
               onClick={toggleTheme}
-              className="rounded-xl p-2 text-ink-600 transition-colors hover:bg-ink-100 hover:text-ink-900 dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-white"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-ink-600 transition-colors hover:bg-ink-100 hover:text-ink-900 dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-white"
               aria-label="Chuyển giao diện sáng/tối"
             >
               {theme === 'light' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -128,7 +128,7 @@ export function Layout() {
             <button
               type="button"
               onClick={() => setSidebarOpen((v) => !v)}
-              className="rounded-xl p-2 text-ink-600 transition-colors hover:bg-ink-100 hover:text-ink-900 dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-white lg:hidden"
+              className="flex h-11 w-11 items-center justify-center text-ink-600 transition-colors hover:bg-ink-100 hover:text-ink-900 dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-white lg:hidden"
               aria-label="Mở/đóng menu"
             >
               {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -150,14 +150,14 @@ export function Layout() {
             onClick={() => setSidebarOpen(false)}
             className="flex items-center gap-2.5 border-b border-ink-100 pb-4 dark:border-ink-800"
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lift">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-soft">
               <Shield className="h-6 w-6" />
             </span>
             <span className="min-w-0">
               <span className="block truncate text-lg font-extrabold leading-tight tracking-tight text-ink-900 dark:text-white">
                 WEBCHECK <span className="text-brand-600 dark:text-brand-400">AI</span>
               </span>
-              <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-ink-400">
+              <span className="block text-[10px] font-semibold tracking-[0.14em] text-ink-400">
                 Website Intelligence
               </span>
             </span>
@@ -166,7 +166,7 @@ export function Layout() {
           <Link
             to="/analyze"
             onClick={() => setSidebarOpen(false)}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-4 py-3 text-sm font-bold text-white shadow-lift transition hover:from-brand-700 hover:to-brand-600"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-glow transition duration-150 hover:bg-brand-700 active:scale-[0.97]"
           >
             <Sparkles className="h-4 w-4" />
             Phân tích URL mới
@@ -204,7 +204,7 @@ export function Layout() {
               <button
                 type="button"
                 onClick={() => refreshHealth()}
-                className="rounded-lg p-1 text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-700"
+                className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-700"
                 aria-label="Làm mới trạng thái backend"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
