@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Lightbulb, Sparkles } from 'lucide-react';
 
 /* Lộ trình cải thiện ưu tiên — bản THU GỌN để chống "trang cuộn dài":
- *  - Mỗi vấn đề = 1 dòng accordion (số thứ tự + tên + mức ưu tiên + điểm mất).
+ *  - Mỗi vấn đề = 1 dòng thu gọn (số thứ tự + tên + mức ưu tiên + điểm mất).
  *    Bấm vào mới mở chi tiết: Vấn đề / Tác động / Đề xuất / Lý do ưu tiên.
- *  - Mặc định chỉ mở sẵn 2 vấn đề nặng nhất ở nhóm ưu tiên cao (bắt đầu từ P0/P1).
- *  - Nhóm P2/P3 gói trong nút "bấm để xem" — người dùng tự mở khi muốn đọc sâu.
+ *  - Mặc định TẤT CẢ thu gọn — phần thu gọn hiển thị trước, chi tiết bấm mới mở.
+ *  - Nhóm P2/P3 gói trong 1 dòng "bấm để xem" — người dùng tự mở khi muốn đọc sâu.
  * Nguồn dữ liệu KHÔNG đổi: analysis.criteria trả từ server (một nguồn sự thật),
  * dùng đúng bằng chứng và gợi ý tiếng Việt của bộ máy, không bịa câu.
  * Các mục Đạt / Không xác định / Không áp dụng không xếp vào lộ trình. */
@@ -142,7 +142,7 @@ function RoadmapItem({ criterion, open, onToggle, tier }) {
 }
 
 export function RoadmapPanel({ criteria = [] }) {
-  const { roadmap, total, autoExpand } = useMemo(() => {
+  const { roadmap, total } = useMemo(() => {
     const grouped = TIERS.map((tier) => ({
       tier,
       items: criteria
@@ -156,33 +156,25 @@ export function RoadmapPanel({ criteria = [] }) {
       items: section.items.map((criterion) => ({ ...criterion, num: (counter += 1) })),
     }));
 
-    // 2 vấn đề đầu tiên sau khi sắp theo điểm mất = việc nặng nhất, mở sẵn cho người dùng.
-    const expand = new Set();
-    for (const section of numbered) {
-      for (const item of section.items) {
-        if (expand.size < 2) expand.add(item.num); else break;
-      }
-      if (expand.size >= 2) break;
-    }
+    // Tất cả các dòng bắt đầu THU GỌN — người dùng bấm mới mở chi tiết (đọc lướt trước).
     return {
       roadmap: numbered,
       total: numbered.reduce((sum, section) => sum + section.items.length, 0),
-      autoExpand: expand,
     };
   }, [criteria]);
 
-  // Đổi kết quả phân tích mới → về trạng thái mặc định (mở 2 việc nặng, nhóm phụ đóng.
-  const [openIds, setOpenIds] = useState(null);
+  // Đổi kết quả phân tích mới → về trạng thái mặc định (mọi dòng thu gọn).
+  const [openIds, setOpenIds] = useState(() => new Set());
   const [tierExpanded, setTierExpanded] = useState({});
   useEffect(() => {
-    setOpenIds(null);
+    setOpenIds(new Set());
     setTierExpanded({});
   }, [criteria]);
 
-  const activeOpen = openIds || autoExpand;
+  const activeOpen = openIds;
   const toggleItem = (num) =>
     setOpenIds((current) => {
-      const next = new Set(current || autoExpand);
+      const next = new Set(current);
       if (next.has(num)) next.delete(num); else next.add(num);
       return next;
     });
@@ -200,7 +192,7 @@ export function RoadmapPanel({ criteria = [] }) {
           </span>
           <div>
             <h2 className="text-base font-bold text-ink-900">Lộ trình cải thiện ưu tiên</h2>
-            <p className="mt-0.5 text-xs text-ink-400">Bấm từng vấn đề để xem chi tiết — mặc định đã mở việc nặng nhất</p>
+            <p className="mt-0.5 text-xs text-ink-400">Phần thu gọn hiển thị trước — bấm từng dòng để mở chi tiết</p>
           </div>
         </div>
         <span className="text-xs font-semibold text-ink-400">{total} mục</span>

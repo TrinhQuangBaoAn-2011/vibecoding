@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronRight, ListChecks } from 'lucide-react';
+import { ChevronDown, ChevronRight, ListChecks } from 'lucide-react';
 import { GROUP_ICONS, GROUP_QUESTIONS, getPriorityMeta, getStatusMeta } from '../lib/constants.js';
 import { StatusBadge, StatusIcon } from './StatusBadge.jsx';
 import { CriterionModal } from './CriterionModal.jsx';
@@ -91,6 +91,8 @@ function CriterionRow({ criterion, onSelect }) {
 }
 
 export function CriteriaList({ criteria = [] }) {
+  // THU GỌN HIỂN THỊ TRƯỚC: 60 dòng chi tiết ẩn sau 1 nút — bấm mới mở (đọc lướt được).
+  const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState(null);
 
@@ -132,7 +134,7 @@ export function CriteriaList({ criteria = [] }) {
           <div>
             <h2 className="text-base font-bold text-ink-900">Chi tiết 60 tiêu chí</h2>
             <p className="mt-0.5 text-xs text-ink-500">
-              Chọn từng tiêu chí để xem bằng chứng, trọng số và đề xuất.
+              Phần thu gọn hiển thị trước — bấm mở để xem bằng chứng, trọng số và đề xuất.
             </p>
           </div>
         </div>
@@ -141,6 +143,8 @@ export function CriteriaList({ criteria = [] }) {
         </span>
       </div>
 
+      {open ? (
+        <>
       <div className="scrollbar-thin flex gap-1.5 overflow-x-auto border-b border-ink-100 px-4 py-3 sm:px-5">
         {FILTERS.map((item) => {
           const active = filter === item.key;
@@ -201,6 +205,48 @@ export function CriteriaList({ criteria = [] }) {
           </div>
         )}
       </div>
+
+          <div className="border-t border-ink-100 px-5 py-3 sm:px-6">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-ink-100/70 px-3 py-2 text-xs font-bold text-ink-600 transition hover:bg-ink-200/70"
+            >
+              <ChevronDown className="h-3.5 w-3.5 rotate-180" />
+              Thu gọn danh sách
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="px-5 py-5 sm:px-6">
+          <div className="flex flex-wrap gap-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="tabular">{counts.pass}</span> Đạt
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              <span className="tabular">{counts.warning}</span> Cần cải thiện
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700 ring-1 ring-inset ring-rose-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+              <span className="tabular">{counts.fail}</span> Chưa đạt
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+              <span className="tabular">{counts.other}</span> Không tính điểm
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-brand-200 bg-brand-50/50 px-4 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-50"
+          >
+            <ChevronRight className="h-4 w-4" />
+            Bấm để xem chi tiết {criteria.length} tiêu chí (bằng chứng + cách khắc phục)
+          </button>
+        </div>
+      )}
 
       <CriterionModal
         criterion={selected}
