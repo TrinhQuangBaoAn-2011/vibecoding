@@ -17,7 +17,7 @@ vibecoding/
 ├── client/                 # frontend React (Vite + Tailwind) — build静态 ra client/dist
 │   ├── src/pages/          # HomePage(Dashboard) · Analyze(ResultPage) · History(+Detail) · Settings · About
 │   ├── src/components/     # UrlForm · ScoreSummary/ScoreRing · CriteriaList · AiConsultant · NinoChat (hỏi-đáp AI) · AnalysisReport · RoadmapPanel
-│   ├── src/lib/            # api.js (auditApi) · storage.js (historyStorage) · report.js (buildReport) · criteriaCatalog.js
+│   ├── src/lib/            # api.js (auditApi) · storage.js (historyStorage) · report.js (buildReport, tải .txt) · criteriaCatalog.js
 │   ├── src/hooks/ · src/context/   # useAnalyze (stream 6 bước) · Health/History/Toast
 │   └── dist/               # bản build đã commit (vercel includeFiles nạp trực tiếp)
 ├── server/                 # backend Express — đóng gói thành 1 lambda @vercel/node (vercel.json ở root)
@@ -65,7 +65,7 @@ backend (Express, Vercel 1 lambda) — mỗi "module" là một file đã có th
 | Frontend: trang kết quả | `pages/Analyze.jsx` / `pages/HistoryDetail.jsx` + `components/AnalysisReport.jsx` | viết demo cho vnexpress/example.com: 75/100, 71/100 |
 | Frontend: điểm + checklist | `ScoreSummary.jsx` (vòng điểm /100 + thanh P0–P3) + `CriteriaList.jsx` (60 mục, tab Đạt/Cần cải thiện/Chưa đạt/Không tính điểm, mở chi tiết từng mục) | "Chi tiết 60 tiêu chí — 33/60 tiêu chí đạt" |
 | Frontend: nhận xét AI | `components/AiConsultant.jsx` (+ panel Phần 3 `part3Review.js`) | rules-fallback minh bạch khi chưa có key |
-| Frontend: sao chép báo cáo | `AnalysisReport.jsx` (sao chép / In / `lib/report.js` dựng báo cáo text) | nút trên live |
+| Frontend: xuất báo cáo | `AnalysisReport.jsx` (sao chép / tải .txt / xem trước / In · `lib/report.js` dựng text + tên tệp `webcheck-<host>.txt`) | nút trên live |
 | Frontend: lịch sử localStorage | `context/HistoryContext.jsx` + `lib/storage.js` (badge số bản ghi ở sidebar, xem lại tại History) | bản ghi lưu cục bộ, sống sau reload |
 | API — JSON | `POST /api/analyze` (JSON 1 lần) · `POST /api/analyze/stream` (NDJSON — JSON từng dòng, đơn ứng như loại stream thôi) · `POST /api/ai-review` · `POST /api/ai-chat` (Nino hỏi-đáp) · `GET /api/fetch` · `GET /api/health` | curl health trả `"service":"WEBCHECK AI API"` |
 | Module 1: API & URL Validator | `server/routes/analyze.js` + `server/lib/urlSecurity.js` (SSRF: chặn IP nội bộ/private, hostname giả danh) + `lib/rateLimit.js` | 30 phân tích/10 phút mỗi IP; chặn ip6-localhost… |

@@ -4,13 +4,15 @@ import {
   ClipboardCheck,
   Copy,
   ExternalLink,
+  Eye,
+  FileDown,
   Globe,
   Printer,
   RotateCcw,
   Trash2,
 } from 'lucide-react';
 import { formatDateTime, formatDuration, formatBytes } from '../lib/format.js';
-import { buildReport, copyTextToClipboard } from '../lib/report.js';
+import { buildReport, copyTextToClipboard, downloadTextFile, reportFileName } from '../lib/report.js';
 import { useToast } from '../context/ToastContext.jsx';
 import { ScoreSummary } from './ScoreSummary.jsx';
 import { CriteriaList } from './CriteriaList.jsx';
@@ -32,6 +34,7 @@ export function AnalysisReport({
 }) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     if (!copied) return undefined;
@@ -44,6 +47,7 @@ export function AnalysisReport({
   const effectiveReview = review || analysis.aiReview || null;
   const record = { ...analysis, aiReview: effectiveReview };
   const finalUrl = analysis.finalUrl || analysis.url;
+  const fileName = reportFileName(analysis.hostname || finalUrl);
 
   const handleCopy = async () => {
     const text = buildReport(record);
@@ -58,6 +62,13 @@ export function AnalysisReport({
         title: 'Sao chép thất bại',
       });
     }
+  };
+
+  const handleDownload = () => {
+    downloadTextFile(buildReport(record), fileName);
+    toast.success(`Đã tải tệp ${fileName} xuống máy.`, {
+      title: 'Tải báo cáo thành công',
+    });
   };
 
   return (
@@ -103,6 +114,23 @@ export function AnalysisReport({
                 >
                   {copied ? <ClipboardCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   {copied ? 'Đã sao chép' : 'Sao chép báo cáo'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-brand-700 shadow-sm transition hover:bg-neutral-50 active:scale-[0.98]"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Tải .txt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewOpen((open) => !open)}
+                  aria-expanded={previewOpen}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-neutral-50/10 px-3 py-2 text-xs font-semibold text-white ring-1 ring-inset ring-white/25 transition hover:bg-white/20"
+                >
+                  <Eye className="h-4 w-4" />
+                  {previewOpen ? 'Ẩn xem trước' : 'Xem trước'}
                 </button>
                 <button
                   type="button"
@@ -159,6 +187,24 @@ export function AnalysisReport({
           </div>
         </div>
       </section>
+
+      {/* Mục 4 của phiếu: nút "Xem trước" — hiển thị Y hệt nội dung .txt sẽ sao chép/tải,
+        * cùng thư viện buildReport() (một nguồn chân lý, không dựng text thứ hai). */}
+      {previewOpen && (
+        <section className="card no-print overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-5 py-3">
+            <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+              Xem trước tệp .txt
+            </h2>
+            <span className="text-[11px] text-muted-foreground">
+              {fileName} — nút "Tải .txt" và "Sao chép báo cáo" dựng đúng nội dung này
+            </span>
+          </div>
+          <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words bg-slate-950 px-5 py-4 font-mono text-[12px] leading-6 text-slate-100">
+            {buildReport(record)}
+          </pre>
+        </section>
+      )}
 
       <ScoreSummary analysis={analysis} comparison={comparison} />
 

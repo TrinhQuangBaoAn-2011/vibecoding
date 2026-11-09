@@ -81,6 +81,38 @@ Website hỗ trợ đánh giá các yếu tố cơ bản, không thay thế mộ
 Điểm số theo bộ tiêu chí cơ bản của WEBCHECK AI, không phải điểm xếp hạng chính thức của Google.`;
 }
 
+// Tên tệp tải về theo phiếu phân công mục 4: webcheck-<host>.txt
+export function reportFileName(hostnameOrUrl) {
+  const raw = String(hostnameOrUrl || '').trim();
+  let host = raw;
+  try {
+    host = new URL(raw).hostname;
+  } catch {
+    // Không phải URL: dùng nguyên chuỗi (thường đã là hostname).
+  }
+  const clean =
+    host
+      .toLowerCase()
+      .replace(/[^a-z0-9.-]/g, '')
+      .replace(/\.+$/, '')
+      .slice(0, 80) || 'website';
+  return `webcheck-${clean}.txt`;
+}
+
+export function downloadTextFile(text, filename) {
+  // Xuống dòng CRLF để file đọc ngay trong Notepad (yêu cầu mục 4).
+  const crlf = String(text).replace(/\n/g, '\r\n');
+  const blob = new Blob([crlf], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1200);
+}
+
 export async function copyTextToClipboard(text) {
   if (navigator.clipboard?.writeText && window.isSecureContext) {
     try {
