@@ -1,0 +1,39 @@
+# CI kiểm mỗi lần đẩy code: lint + build client, test engine + server.
+# Lỗi code bị chặn dưới GitHub — không rơi vào tay người dùng/người chấm.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  client:
+    name: client (lint + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: ESLint no-undef
+        working-directory: client
+        run: npx --yes eslint@8.57.0 --no-eslintrc -c qa-no-undef.json src --ext .js,.jsx
+      - name: Build client
+        working-directory: client
+        run: npm install && npm run build
+
+  tests:
+    name: webcheck + server tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test engine webcheck (46 mục)
+        working-directory: webcheck
+        run: npm install && npm test
+      - name: Test server (scoring 5 mục)
+        working-directory: server
+        run: npm install && npm test
