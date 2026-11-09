@@ -66,6 +66,10 @@ if (hasClientBuild) {
   app.use(express.static(config.clientDist, { index: false, maxAge: '1h' }));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
+    // Chống "trang trắng sau deploy": HTML luôn bảo trình duyệt xác thực lại
+    // (ETag) thay vì cache phỏng đoán — mỗi lần mở tab sẽ nhận index.html mới,
+    // làm việc đè tới asset hash đúng bản deploy hiện tại.
+    res.set('Cache-Control', 'no-cache');
     res.sendFile(indexPath);
   });
 } else {
