@@ -4,6 +4,7 @@ import express from 'express';
 import { config } from './config.js';
 import analyzeRoutes from './routes/analyze.js';
 import aiReviewRoutes from './routes/aiReview.js';
+import aiChatRoutes from './routes/aiChat.js';
 import healthRoutes from './routes/health.js';
 import { webcheckToolRouter } from './routes/webcheckTool.js';
 import { errorPayload } from './lib/errors.js';
@@ -25,6 +26,7 @@ app.use(express.json({ limit: '128kb', strict: true }));
 app.use('/api', healthRoutes);
 app.use('/api', analyzeRoutes);
 app.use('/api', aiReviewRoutes);
+app.use('/api', aiChatRoutes);
 
 // WebCheck 60 tiêu chí (công cụ tĩnh của mốc 1 được nhúng): hợp đồng
 // GET /api/fetch từ webcheck/api/fetch.mjs — gắn cả hai đường vì tool
@@ -42,6 +44,7 @@ app.get('/api', (req, res) => {
       'POST /api/analyze',
       'POST /api/analyze/stream',
       'POST /api/ai-review',
+      'POST /api/ai-chat',
     ],
   });
 });

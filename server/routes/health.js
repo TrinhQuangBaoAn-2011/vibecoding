@@ -20,6 +20,7 @@ router.get('/health', (req, res) => {
       maxHtmlBytes: config.fetch.maxBytes,
       analyzePerWindow: config.rateLimit.analyzeMax,
       aiPerWindow: config.rateLimit.aiMax,
+      aiChatPerWindow: config.rateLimit.chatMax,
       rateLimitWindowMs: config.rateLimit.windowMs,
     },
     cache: storeStats(),

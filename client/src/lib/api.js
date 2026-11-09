@@ -174,6 +174,35 @@ export async function requestAiReview({ analysisId, analysis, signal } = {}) {
   return payload.review;
 }
 
+export async function requestNinoChat({ analysisId, analysis, question, history, signal } = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}/api/ai-chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        analysisId: analysisId || undefined,
+        analysis,
+        question,
+        history,
+      }),
+      signal,
+      cache: 'no-store',
+    });
+  } catch (error) {
+    throw connectionError(error);
+  }
+
+  if (!response.ok) throw await errorFromResponse(response);
+  const payload = await response.json();
+  if (!payload?.chat?.reply) {
+    throw new ApiError('Backend không trả về câu trả lời của Nino hợp lệ.', {
+      code: 'INVALID_AI_CHAT_RESPONSE',
+    });
+  }
+  return payload.chat;
+}
+
 export function getApiBase() {
   if (API_BASE) return API_BASE;
   if (typeof window !== 'undefined') return window.location.origin;

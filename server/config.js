@@ -31,6 +31,7 @@ export const config = {
     windowMs: numberFromEnv(process.env.RATE_LIMIT_WINDOW_MS, 10 * 60 * 1000),
     analyzeMax: numberFromEnv(process.env.RATE_LIMIT_ANALYZE_MAX, 30),
     aiMax: numberFromEnv(process.env.RATE_LIMIT_AI_MAX, 40),
+    chatMax: numberFromEnv(process.env.RATE_LIMIT_AI_CHAT_MAX, 40),
   },
   ai: {
     apiKey: process.env.AI_API_KEY || process.env.OPENAI_API_KEY || '',

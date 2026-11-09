@@ -102,6 +102,9 @@ export function Analyze() {
   // 2) panel legacy Part 3 (part3Review.js) → trùng panel AiConsultant; nhận xét
   //    AI chỉ có một đường duy nhất từ useAnalyze(/api/ai-review) hiển thị qua
   //    AnalysisReport. File lib/* giữ làm tài sản nhóm, không cắm vào luồng app.
+  //    Ngoại lệ duy nhất (11/11/2026): NinoChat → /api/ai-chat là đường AI thứ hai
+  //    ĐƯỢC THIẾT KẾ — không quét, chỉ gửi lại cùng object `analysis` máy chấm trả
+  //    về để hỏi-đáp, nên không đụng quy tắc "Chỉ Backend quét".
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

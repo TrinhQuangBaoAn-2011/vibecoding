@@ -1,4 +1,4 @@
-# WebCheck — hợp đồng ghép code (v3.0)
+# WebCheck — hợp đồng ghép code (v3.1)
 
 Tài liệu này chốt cách các mốc cắm vào phần Mốc 1. Quy ước của nhóm là **làm riêng rồi ghép**,
 nên mọi thứ các bạn cần đều nằm ở đây — đọc kỹ trước khi viết code để không phải chỉnh sau.
@@ -260,6 +260,27 @@ trang gốc trả về 200 kèm `statusCode` thay vì báo lỗi). `meta` gửi 
 `{ inputUrl, finalUrl, statusCode, elapsedMs, robots:{statusCode,text}, sitemap:{statusCode,text} }`.
 Các mốc 2–5 không cần biết flag này.
 
+### 7.1 Hai đường AI của app server (v3.1 — thêm Nino)
+
+Cả hai dùng chung cấu hình AI (`AI_API_KEY`/`AI_BASE_URL`/`AI_MODEL`), cùng shape lỗi
+`errorPayload`, mỗi đường có rate-limit riêng **40 lượt/10 phút** (analyze là 30/10 phút):
+
+| Endpoint | Việc | Body | Response |
+|---|---|---|---|
+| `POST /api/ai-review` | Nhận xét tổng (strengths/improvements/summary) | `{ analysisId \| analysis }` | `{ review, analysisId }` |
+| `POST /api/ai-chat` | **Nino** — hỏi-đáp tự do về website đã phân tích | `{ question, history?[], analysisId \| analysis }` | `{ chat, analysisId }` |
+
+- `chat` = `{ source: 'ai' | 'rules', model?, reply, notice, disclaimer, generatedAt, intent? }`.
+  `source: 'rules'` → trả lời theo bộ quy tắc trên chính dữ liệu phân tích, `notice` ghi rõ
+  lý do (chưa cấu hình AI / AI timeout / AI trả rác). UI chỉ được hiện đúng source — **không
+  được giả cờ AI**.
+- **Nino KHÔNG quét web, KHÔNG tính lại điểm**: server chỉ nhận `analysis` đã chấm
+  (`analysisId` tra store TTL 30′ hoặc payload qua `coerceAnalysisPayload` gate ≥55 mục);
+  `normalizeChatPayload` chặn câu hỏi rỗng, lọc history sai role + bó 8 mục cuối.
+- Guard minh bạch: AI nêu điểm `x/100` khác báo cáo → rơi bộ quy tắc (`server/lib/aiChat.js`
+  `guardAiReply`). UI cắm `components/NinoChat.jsx` ngay sau AiConsultant; hội thoại cuộn
+  nội bộ (không đẩy trang dài).
+
 ## 8. Mốc 3 — Nhận xét AI (TẠM THÁO — cách dựng lại cho v2.0)
 
 Giữ nguyên như v1.3: thẻ `<script src="js/moc3-ai.js">` được gỡ khỏi `results.html`; slot
@@ -324,3 +345,7 @@ prompt mẫu vẫn như v1.3 — giữ ở trong file `js/moc3-ai.js`, không l�
   60 mục + tests vẫn là **gate chất lượng** (46 test + tests server `server/tests/scoring.test.mjs`
   5 test), UI vanilla chỉ còn là máy chấm QA. UI "lộ trình cải thiện ưu tiên" của app do mốc bổ
   sung theo thiết kế nhóm (components/RoadmapPanel.jsx).
+- **v3.1** (11/11/2026): thêm **Nino — trợ lý AI hỏi-đáp** (`POST /api/ai-chat` + `client/src/components/NinoChat.jsx`).
+  Nino chỉ được đọc dữ liệu phân tích đã chấm (không tự quét, không tính lại điểm — giữ nguyên quy tắc
+  "Chỉ Backend quét"); AI chết → tự rơi bộ quy tắc trả lời theo chủ đề (source `rules`, notice minh bạch).
+  Tests mới offline: `server/tests/aiChat.test.mjs` (7 test). Rate-limit riêng `chat 40/10` (`RATE_LIMIT_AI_CHAT_MAX`).

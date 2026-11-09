@@ -17,6 +17,7 @@ import { CriteriaList } from './CriteriaList.jsx';
 import { RoadmapPanel } from './RoadmapPanel.jsx';
 import { ComparisonCard } from './ComparisonCard.jsx';
 import { AiConsultant } from './AiConsultant.jsx';
+import { NinoChat } from './NinoChat.jsx';
 
 export function AnalysisReport({
   analysis,
@@ -169,6 +170,14 @@ export function AnalysisReport({
         status={aiStatus}
         error={aiError}
         onRetryAi={onRetryAi}
+        analysis={analysis}
+      />
+
+      {/* Nino — hỏi-đáp theo báo cáo: đọc lại ĐÚNG object `analysis` máy chấm đã trả,
+        * không tạo luồng quét thứ hai (đúng quy tắc "một đường dữ liệu"). Chỉ mở
+        * phiên chat riêng cho từng lần phân tích (key = id/bản ghi phân tích). */}
+      <NinoChat
+        key={analysis.analysisId || analysis.analyzedAt || analysis.url}
         analysis={analysis}
       />
 
